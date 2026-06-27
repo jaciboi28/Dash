@@ -498,6 +498,13 @@ main {
 }
 .fitbit-connect-btn:hover { background: rgba(255,255,255,0.09); }
 .fitbit-connect-btn:disabled { opacity: 0.45; cursor: default; }
+.fitbit-strip-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.fitbit-status {
+  font-size: 10px; font-family: var(--font-mono);
+  color: var(--text-quaternary); text-align: right;
+  max-width: 140px; line-height: 1.35;
+}
+.fitbit-status.is-error { color: var(--warning); }
 </style>
 </head>
 <body>
@@ -513,7 +520,10 @@ main {
         <div class="fitbit-strip-steps" id="fitbitSteps">—</div>
       </div>
     </div>
-    <button class="fitbit-connect-btn" id="fitbitConnectBtn">Connect Fitbit Air</button>
+    <div class="fitbit-strip-right">
+      <button class="fitbit-connect-btn" id="fitbitConnectBtn">Connect Fitbit Air</button>
+      <div class="fitbit-status" id="fitbitStatus"></div>
+    </div>
   </div>
 
   <div class="stack-card">
@@ -1096,12 +1106,14 @@ document.addEventListener('DOMContentLoaded', function () {
   'use strict';
 
   // ── Config ──────────────────────────────────────────────────────────────────
-  const CLIENT_ID    = '346047348007-ihhoq77fbvgtd5dinjkvh6vklplc7050.apps.googleusercontent.com';
-  const AUTH_URL     = 'https://accounts.google.com/o/oauth2/v2/auth';
-  const TOKEN_URL    = 'https://oauth2.googleapis.com/token';
-  const SCOPE        = 'https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly';
-  const API_URL      = 'https://health.googleapis.com/v4/users/me/dataTypes/steps/dataPoints';
-  const REDIRECT_URI = window.location.origin + '/health.html';
+  const CLIENT_ID = '346047348007-ihhoq77fbvgtd5dinjkvh6vklplc7050.apps.googleusercontent.com';
+  const AUTH_URL  = 'https://accounts.google.com/o/oauth2/v2/auth';
+  const TOKEN_URL = 'https://oauth2.googleapis.com/token';
+  const SCOPE     = 'https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly';
+  const API_URL   = 'https://health.googleapis.com/v4/users/me/dataTypes/steps/dataPoints';
+  // Computed at call-time so it always matches the actual page URL,
+  // avoiding redirect_uri mismatch errors from trailing-slash or path variations.
+  function redirectUri() { return window.location.origin + window.location.pathname; }
 
   // ── localStorage keys ────────────────────────────────────────────────────────
   const LS_ACCESS   = 'google_health_access_token';
@@ -1112,8 +1124,9 @@ document.addEventListener('DOMContentLoaded', function () {
   const LS_STEPS    = 'stack:fitbit:steps';
 
   // ── DOM refs ─────────────────────────────────────────────────────────────────
-  const stepsEl     = document.getElementById('fitbitSteps');
-  const connectBtn  = document.getElementById('fitbitConnectBtn');
+  const stepsEl    = document.getElementById('fitbitSteps');
+  const connectBtn = document.getElementById('fitbitConnectBtn');
+  const statusEl   = document.getElementById('fitbitStatus');
 
   // ── PKCE helpers ─────────────────────────────────────────────────────────────
   function b64url(buf) {
@@ -1155,6 +1168,11 @@ document.addEventListener('DOMContentLoaded', function () {
       : connected ? 'Refresh'
       : 'Connect Fitbit Air';
   }
+  function setStatus(msg, isError) {
+    if (!statusEl) return;
+    statusEl.textContent = msg || '';
+    statusEl.classList.toggle('is-error', !!isError);
+  }
 
   // ── Token refresh ─────────────────────────────────────────────────────────────
   async function refreshToken() {
@@ -1165,7 +1183,11 @@ document.addEventListener('DOMContentLoaded', function () {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ client_id: CLIENT_ID, grant_type: 'refresh_token', refresh_token: rt }),
     });
-    if (!res.ok) { clearTokens(); throw new Error('refresh_failed:' + res.status); }
+    if (!res.ok) {
+      const body = await res.text();
+      clearTokens();
+      throw new Error('refresh_failed:' + res.status + ' ' + body);
+    }
     const d = await res.json();
     saveTokens(d);
     return d.access_token;
@@ -1213,10 +1235,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   async function loadSteps() {
     setBtn(true, true);
+    setStatus('Fetching…');
     try {
       const token = await validToken();
       const steps = await fetchSteps(token, false);
-      // Store in localStorage — sync.js will pick this up and push to Supabase
       localStorage.setItem(LS_STEPS, JSON.stringify({
         steps,
         date: new Date().toDateString(),
@@ -1224,13 +1246,24 @@ document.addEventListener('DOMContentLoaded', function () {
       }));
       setStepsUI(steps);
       setBtn(true, false);
+      setStatus('Updated just now');
     } catch (e) {
       console.warn('[GoogleHealth]', e.message);
-      if (e.message === 'not_authenticated' || e.message.startsWith('refresh_failed')) {
+      const isAuthErr = e.message === 'not_authenticated'
+        || e.message.startsWith('no_refresh_token')
+        || e.message.startsWith('refresh_failed');
+      if (isAuthErr) {
+        clearTokens();
         setBtn(false, false);
         setStepsUI(null);
+        setStatus('Session expired — reconnect', true);
       } else {
         setBtn(true, false);
+        // Show a short version of the error so the user knows what happened
+        const hint = e.message.startsWith('api_error:')
+          ? 'API error ' + e.message.slice(10)
+          : e.message.slice(0, 40);
+        setStatus(hint, true);
       }
     }
   }
@@ -1243,7 +1276,7 @@ document.addEventListener('DOMContentLoaded', function () {
     localStorage.setItem(LS_VERIFIER, verifier);
     localStorage.setItem(LS_STATE, state);
     const p = new URLSearchParams({
-      client_id: CLIENT_ID, redirect_uri: REDIRECT_URI,
+      client_id: CLIENT_ID, redirect_uri: redirectUri(),
       response_type: 'code', scope: SCOPE,
       state, code_challenge: challenge, code_challenge_method: 'S256',
       access_type: 'offline', prompt: 'consent',
@@ -1262,7 +1295,7 @@ document.addEventListener('DOMContentLoaded', function () {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         client_id: CLIENT_ID, code, code_verifier: verifier,
-        grant_type: 'authorization_code', redirect_uri: REDIRECT_URI,
+        grant_type: 'authorization_code', redirect_uri: redirectUri(),
       }),
     });
     if (!res.ok) throw new Error('exchange_failed:' + res.status + ' ' + await res.text());
@@ -1287,10 +1320,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
       const savedState = localStorage.getItem(LS_STATE);
       if (savedState && returnedState !== savedState) {
-        console.error('[GoogleHealth] State mismatch — aborting');
         setBtn(false, false);
+        setStatus('Auth error: state mismatch', true);
         return;
       }
+      setBtn(true, true);
+      setStatus('Exchanging token…');
       try {
         const tokens = await exchangeCode(code);
         saveTokens(tokens);
@@ -1298,6 +1333,9 @@ document.addEventListener('DOMContentLoaded', function () {
       } catch (e) {
         console.error('[GoogleHealth] Exchange error:', e.message);
         setBtn(false, false);
+        // Show a human-readable slice of the error so the user can act on it
+        const hint = e.message.length > 60 ? e.message.slice(0, 60) + '…' : e.message;
+        setStatus(hint, true);
       }
       return;
     }
