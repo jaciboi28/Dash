@@ -1110,9 +1110,9 @@ document.addEventListener('DOMContentLoaded', function () {
   const AUTH_URL     = 'https://accounts.google.com/o/oauth2/v2/auth';
   const EXCHANGE_URL = 'https://lgqfgbvqzhztssfmiwbi.supabase.co/functions/v1/google-token-exchange';
   const TOKEN_URL    = 'https://oauth2.googleapis.com/token'; // refresh only
-  const SCOPE     = 'https://www.googleapis.com/auth/health.activity';
+  const SCOPE     = 'https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly';
   const API_URL   = 'https://health.googleapis.com/v1/users/me/aggregates';
-  const SCOPE_VER = 'v3'; // bump when scope changes to force re-auth
+  const SCOPE_VER = 'v4'; // bump when scope changes to force re-auth
   // Computed at call-time so it always matches the actual page URL,
   // avoiding redirect_uri mismatch errors from trailing-slash or path variations.
   function redirectUri() { return window.location.origin + window.location.pathname; }
