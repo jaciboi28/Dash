@@ -723,30 +723,48 @@ body::after {
     return out;
   }
 
+  // ---------- UK timezone ----------
+  const UK_TZ = 'Europe/London';
+  function getUKParts(date) {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: UK_TZ,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    }).formatToParts(date);
+    const get = t => Number(parts.find(p => p.type === t).value);
+    return { year: get('year'), month: get('month'), day: get('day'),
+             hour: get('hour') % 24, minute: get('minute'), second: get('second') };
+  }
+
   // ---------- date helpers ----------
   function pad2(n) { return String(n).padStart(2, '0'); }
-  function dateToKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  function dateToKey(d) {
+    const p = getUKParts(d);
+    return p.year + '-' + pad2(p.month) + '-' + pad2(p.day);
+  }
   function getActiveDateString() {
     const now = new Date();
-    if (now.getHours() < 6) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - 1);
-      return dateToKey(d);
+    if (getUKParts(now).hour < 6) {
+      return dateToKey(new Date(now.getTime() - 6 * 60 * 60 * 1000));
     }
     return dateToKey(now);
   }
   function getTomorrowDateString() {
     const now = new Date();
-    const d = new Date(now);
-    if (now.getHours() >= 6) d.setDate(d.getDate() + 1);
-    return dateToKey(d);
+    const { year, month, day, hour } = getUKParts(now);
+    if (hour >= 6) {
+      return dateToKey(new Date(Date.UTC(year, month - 1, day, 12) + 24 * 60 * 60 * 1000));
+    }
+    return dateToKey(now);
   }
   function formatDate(yyyy_mm_dd) {
-    const parts = yyyy_mm_dd.split('-').map(Number);
-    const d = new Date(parts[0], parts[1] - 1, parts[2]);
-    const wk = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
-    const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
-    return wk + ', ' + mo + ' ' + d.getDate();
+    const [y, m, d] = yyyy_mm_dd.split('-').map(Number);
+    const date = new Date(Date.UTC(y, m - 1, d, 12));
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: UK_TZ, weekday: 'short', month: 'short', day: 'numeric'
+    }).formatToParts(date);
+    const get = t => (parts.find(p => p.type === t) || {}).value || '';
+    return get('weekday') + ', ' + get('month') + ' ' + get('day');
   }
 
   function todayKey()    { return 'goals:' + getActiveDateString(); }
@@ -901,12 +919,10 @@ body::after {
   function rgb(c) { return 'rgb(' + Math.round(c[0]) + ',' + Math.round(c[1]) + ',' + Math.round(c[2]) + ')'; }
 
   function formatClock(d) {
-    let h = d.getHours();
-    const m = d.getMinutes();
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12;
-    if (h === 0) h = 12;
-    return h + ':' + pad2(m) + ' ' + ampm;
+    const { hour, minute } = getUKParts(d);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const h = hour % 12 || 12;
+    return h + ':' + pad2(minute) + ' ' + ampm;
   }
   function formatRemaining(totalMin) {
     const h = Math.floor(totalMin / 60);
@@ -921,7 +937,8 @@ body::after {
 
   function updateDayRing() {
     const now = new Date();
-    const hours = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+    const { hour: _h, minute: _m, second: _s } = getUKParts(now);
+    const hours = _h + _m / 60 + _s / 3600;
     const percentEl   = document.getElementById('dayRingPercent');
     const phaseEl     = document.getElementById('dayRingPhase');
     const clockEl     = document.getElementById('dayRingClock');
@@ -1237,8 +1254,9 @@ body::after {
     return arr[0].trim();
   }
 
-  function makeAddHandlers(input, addBtn, polishBtn, key, statusEl, reload) {
+  function makeAddHandlers(input, addBtn, polishBtn, keyFn, statusEl, reload) {
     function plainAdd(text) {
+      const key = typeof keyFn === 'function' ? keyFn() : keyFn;
       const list = getGoals(key);
       list.push({ text, done: false });
       setGoals(key, list);
@@ -1278,7 +1296,7 @@ body::after {
     document.getElementById('goalInput'),
     document.getElementById('goalAddBtn'),
     document.getElementById('goalPolishBtn'),
-    todayKey(),
+    todayKey,
     document.getElementById('polishStatus'),
     loadToday
   );
@@ -1286,7 +1304,7 @@ body::after {
     document.getElementById('tomorrowInput'),
     document.getElementById('tomorrowAddBtn'),
     document.getElementById('tomorrowPolishBtn'),
-    tomorrowKey(),
+    tomorrowKey,
     document.getElementById('tomorrowStatus'),
     loadTomorrow
   );
