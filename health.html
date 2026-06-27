@@ -465,12 +465,56 @@ main {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.15); }
+
+/* ===== Fitbit / Google Health steps widget ===== */
+.fitbit-strip {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; margin-bottom: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px; gap: 12px;
+}
+.fitbit-strip-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.fitbit-strip-icon { font-size: 20px; flex-shrink: 0; filter: grayscale(1) brightness(1.4); }
+.fitbit-strip-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.fitbit-strip-steps {
+  font-size: 22px; font-weight: 700; line-height: 1.15;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+}
+.fitbit-connect-btn {
+  flex-shrink: 0; padding: 7px 14px;
+  border: 1px solid var(--border-strong); border-radius: 9px;
+  background: rgba(255,255,255,0.05);
+  color: var(--text-secondary);
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+.fitbit-connect-btn:hover { background: rgba(255,255,255,0.09); }
+.fitbit-connect-btn:disabled { opacity: 0.45; cursor: default; }
 </style>
 </head>
 <body>
 
 <main>
   <div class="section-title">Daily Stack</div>
+
+  <div class="fitbit-strip" id="fitbitStrip">
+    <div class="fitbit-strip-left">
+      <span class="fitbit-strip-icon">👟</span>
+      <div>
+        <div class="fitbit-strip-label">Steps · Today</div>
+        <div class="fitbit-strip-steps" id="fitbitSteps">—</div>
+      </div>
+    </div>
+    <button class="fitbit-connect-btn" id="fitbitConnectBtn">Connect Fitbit Air</button>
+  </div>
 
   <div class="stack-card">
     <div class="stack-ticker" id="stackTicker">
@@ -1040,12 +1084,245 @@ document.addEventListener('DOMContentLoaded', function () {
   if (typeof initCloudSync !== 'function') return;
   initCloudSync({
     appKey: 'health',
-    syncedKeys: ['stack:items', 'stack:version', 'stack:low', 'po_water_v1'],
+    syncedKeys: ['stack:items', 'stack:version', 'stack:low', 'po_water_v1', 'stack:fitbit:steps'],
     syncedPrefixes: ['stack:taken:'],
     onApplied: function () { window.dispatchEvent(new Event('storage')); }
   });
 });
 </script>
 
+<script>
+(function () {
+  'use strict';
+
+  // ── Config ──────────────────────────────────────────────────────────────────
+  const CLIENT_ID    = '346047348007-ihhoq77fbvgtd5dinjkvh6vklplc7050.apps.googleusercontent.com';
+  const AUTH_URL     = 'https://accounts.google.com/o/oauth2/v2/auth';
+  const TOKEN_URL    = 'https://oauth2.googleapis.com/token';
+  const SCOPE        = 'https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly';
+  const API_URL      = 'https://health.googleapis.com/v4/users/me/dataTypes/steps/dataPoints';
+  const REDIRECT_URI = window.location.origin + '/health.html';
+
+  // ── localStorage keys ────────────────────────────────────────────────────────
+  const LS_ACCESS   = 'google_health_access_token';
+  const LS_REFRESH  = 'google_health_refresh_token';
+  const LS_EXPIRY   = 'google_health_token_expiry';
+  const LS_VERIFIER = 'google_health_code_verifier';
+  const LS_STATE    = 'google_health_oauth_state';
+  const LS_STEPS    = 'stack:fitbit:steps';
+
+  // ── DOM refs ─────────────────────────────────────────────────────────────────
+  const stepsEl     = document.getElementById('fitbitSteps');
+  const connectBtn  = document.getElementById('fitbitConnectBtn');
+
+  // ── PKCE helpers ─────────────────────────────────────────────────────────────
+  function b64url(buf) {
+    return btoa(String.fromCharCode(...new Uint8Array(buf)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  }
+  function randomB64url(n) {
+    return b64url(crypto.getRandomValues(new Uint8Array(n)));
+  }
+  async function sha256B64url(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return b64url(buf);
+  }
+
+  // ── Token helpers ─────────────────────────────────────────────────────────────
+  function getToken()   { return localStorage.getItem(LS_ACCESS); }
+  function getRefresh() { return localStorage.getItem(LS_REFRESH); }
+  function isExpired()  {
+    const e = parseInt(localStorage.getItem(LS_EXPIRY) || '0', 10);
+    return Date.now() >= e - 60_000;
+  }
+  function saveTokens(d) {
+    localStorage.setItem(LS_ACCESS, d.access_token);
+    if (d.refresh_token) localStorage.setItem(LS_REFRESH, d.refresh_token);
+    localStorage.setItem(LS_EXPIRY, String(Date.now() + (d.expires_in || 3600) * 1000));
+  }
+  function clearTokens() {
+    [LS_ACCESS, LS_REFRESH, LS_EXPIRY].forEach(k => localStorage.removeItem(k));
+  }
+
+  // ── UI ────────────────────────────────────────────────────────────────────────
+  function setStepsUI(n) {
+    if (stepsEl) stepsEl.textContent = n != null ? Number(n).toLocaleString() : '—';
+  }
+  function setBtn(connected, loading) {
+    if (!connectBtn) return;
+    connectBtn.disabled = !!loading;
+    connectBtn.textContent = loading ? 'Loading…'
+      : connected ? 'Refresh'
+      : 'Connect Fitbit Air';
+  }
+
+  // ── Token refresh ─────────────────────────────────────────────────────────────
+  async function refreshToken() {
+    const rt = getRefresh();
+    if (!rt) throw new Error('no_refresh_token');
+    const res = await fetch(TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ client_id: CLIENT_ID, grant_type: 'refresh_token', refresh_token: rt }),
+    });
+    if (!res.ok) { clearTokens(); throw new Error('refresh_failed:' + res.status); }
+    const d = await res.json();
+    saveTokens(d);
+    return d.access_token;
+  }
+
+  async function validToken() {
+    if (isExpired() && getRefresh()) return refreshToken();
+    const t = getToken();
+    if (!t) throw new Error('not_authenticated');
+    return t;
+  }
+
+  // ── Fetch steps ───────────────────────────────────────────────────────────────
+  function todayRange() {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const end   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    return { startTime: start.toISOString(), endTime: end.toISOString() };
+  }
+
+  async function fetchSteps(token, isRetry) {
+    const { startTime, endTime } = todayRange();
+    const url = new URL(API_URL);
+    url.searchParams.set('startTime', startTime);
+    url.searchParams.set('endTime', endTime);
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: 'Bearer ' + token },
+    });
+    if (res.status === 401 && !isRetry) {
+      const fresh = await refreshToken();
+      return fetchSteps(fresh, true);
+    }
+    if (!res.ok) throw new Error('api_error:' + res.status);
+    const json = await res.json();
+    // v4 dataPoints grammar: sum intVal / fpVal across all dataPoints
+    let total = 0;
+    for (const pt of (json.dataPoints || [])) {
+      for (const v of (pt.value || [])) {
+        if (v.intVal != null)      total += v.intVal;
+        else if (v.fpVal != null)  total += Math.round(v.fpVal);
+      }
+    }
+    return total;
+  }
+
+  async function loadSteps() {
+    setBtn(true, true);
+    try {
+      const token = await validToken();
+      const steps = await fetchSteps(token, false);
+      // Store in localStorage — sync.js will pick this up and push to Supabase
+      localStorage.setItem(LS_STEPS, JSON.stringify({
+        steps,
+        date: new Date().toDateString(),
+        updatedAt: new Date().toISOString(),
+      }));
+      setStepsUI(steps);
+      setBtn(true, false);
+    } catch (e) {
+      console.warn('[GoogleHealth]', e.message);
+      if (e.message === 'not_authenticated' || e.message.startsWith('refresh_failed')) {
+        setBtn(false, false);
+        setStepsUI(null);
+      } else {
+        setBtn(true, false);
+      }
+    }
+  }
+
+  // ── OAuth initiation ──────────────────────────────────────────────────────────
+  async function startAuth() {
+    const verifier   = randomB64url(32);
+    const challenge  = await sha256B64url(verifier);
+    const state      = randomB64url(16);
+    localStorage.setItem(LS_VERIFIER, verifier);
+    localStorage.setItem(LS_STATE, state);
+    const p = new URLSearchParams({
+      client_id: CLIENT_ID, redirect_uri: REDIRECT_URI,
+      response_type: 'code', scope: SCOPE,
+      state, code_challenge: challenge, code_challenge_method: 'S256',
+      access_type: 'offline', prompt: 'consent',
+    });
+    window.location.href = AUTH_URL + '?' + p;
+  }
+
+  // ── Code exchange ─────────────────────────────────────────────────────────────
+  async function exchangeCode(code) {
+    const verifier = localStorage.getItem(LS_VERIFIER);
+    if (!verifier) throw new Error('missing_verifier');
+    localStorage.removeItem(LS_VERIFIER);
+    localStorage.removeItem(LS_STATE);
+    const res = await fetch(TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: CLIENT_ID, code, code_verifier: verifier,
+        grant_type: 'authorization_code', redirect_uri: REDIRECT_URI,
+      }),
+    });
+    if (!res.ok) throw new Error('exchange_failed:' + res.status + ' ' + await res.text());
+    return res.json();
+  }
+
+  // ── Boot ──────────────────────────────────────────────────────────────────────
+  async function boot() {
+    // Show cached steps immediately for instant paint
+    try {
+      const cached = JSON.parse(localStorage.getItem(LS_STEPS) || 'null');
+      if (cached && cached.steps != null) setStepsUI(cached.steps);
+    } catch {}
+
+    const params        = new URLSearchParams(window.location.search);
+    const code          = params.get('code');
+    const returnedState = params.get('state');
+
+    if (code) {
+      // Wipe the ?code=… from the address bar immediately
+      window.history.replaceState({}, '', window.location.pathname);
+
+      const savedState = localStorage.getItem(LS_STATE);
+      if (savedState && returnedState !== savedState) {
+        console.error('[GoogleHealth] State mismatch — aborting');
+        setBtn(false, false);
+        return;
+      }
+      try {
+        const tokens = await exchangeCode(code);
+        saveTokens(tokens);
+        await loadSteps();
+      } catch (e) {
+        console.error('[GoogleHealth] Exchange error:', e.message);
+        setBtn(false, false);
+      }
+      return;
+    }
+
+    if (getToken() || getRefresh()) {
+      await loadSteps();
+    } else {
+      setBtn(false, false);
+    }
+  }
+
+  // ── Button handler ────────────────────────────────────────────────────────────
+  if (connectBtn) {
+    connectBtn.addEventListener('click', () => {
+      if (getToken() || getRefresh()) loadSteps();
+      else startAuth();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+})();
+</script>
 </body>
 </html>
