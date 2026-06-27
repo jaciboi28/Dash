@@ -1202,37 +1202,33 @@ document.addEventListener('DOMContentLoaded', function () {
     return t;
   }
 
-  // ── Fetch steps ───────────────────────────────────────────────────────────────
+  // ── Fetch steps (proxied via edge function to avoid CORS) ────────────────────
   async function fetchSteps(token, isRetry) {
-    const now = new Date();
-    const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const endTime   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
-    const res = await fetch(API_URL, {
+    const res = await fetch(EXCHANGE_URL, {
       method: 'POST',
-      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ startTime, endTime, aggregateBy: ['STEPS'] }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'fetch_steps', access_token: token }),
     });
-    if (res.status === 401 && !isRetry) {
+    if (!res.ok) throw new Error('proxy_error:' + res.status);
+    const { status, body } = await res.json();
+    if (status === 401 && !isRetry) {
       const fresh = await refreshToken();
       return fetchSteps(fresh, true);
     }
-    const body = await res.text();
-    if (!res.ok) throw new Error('api_error:' + res.status + ' ' + body);
-    const json = JSON.parse(body);
-    // Log full response so we can inspect the shape if steps come back 0
-    console.log('[health api response]', json);
-    // Try common response shapes
-    if (typeof json.steps === 'number') return json.steps;
-    if (Array.isArray(json.aggregates)) {
-      const agg = json.aggregates.find(a => a.type === 'STEPS' || a.dataType === 'STEPS' || a.metricType === 'STEPS');
+    if (status !== 200) throw new Error('api_error:' + status + ' ' + body);
+    const data = JSON.parse(body);
+    console.log('[health api response]', data);
+    // Try common response shapes — surface unknown shape so we can adapt
+    if (typeof data.steps === 'number') return data.steps;
+    if (Array.isArray(data.aggregates)) {
+      const agg = data.aggregates.find(a => ['STEPS','steps'].includes(a.type || a.dataType || a.metricType || ''));
       if (agg) return agg.value ?? agg.intVal ?? agg.count ?? 0;
     }
-    if (Array.isArray(json.dataPoints)) {
-      return json.dataPoints.reduce((s, p) =>
+    if (Array.isArray(data.dataPoints)) {
+      return data.dataPoints.reduce((s, p) =>
         s + (p.value || []).reduce((s2, v) => s2 + (v.intVal || Math.round(v.fpVal || 0)), 0), 0);
     }
-    // Unknown shape — surface raw JSON briefly so we can adapt
-    throw new Error('unknown_shape: ' + body.slice(0, 200));
+    throw new Error('unknown_shape: ' + body.slice(0, 300));
   }
 
   async function loadSteps() {
