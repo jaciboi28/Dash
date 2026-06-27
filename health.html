@@ -1106,9 +1106,10 @@ document.addEventListener('DOMContentLoaded', function () {
   'use strict';
 
   // ── Config ──────────────────────────────────────────────────────────────────
-  const CLIENT_ID = '346047348007-ihhoq77fbvgtd5dinjkvh6vklplc7050.apps.googleusercontent.com';
-  const AUTH_URL  = 'https://accounts.google.com/o/oauth2/v2/auth';
-  const TOKEN_URL = 'https://oauth2.googleapis.com/token';
+  const CLIENT_ID    = '346047348007-ihhoq77fbvgtd5dinjkvh6vklplc7050.apps.googleusercontent.com';
+  const AUTH_URL     = 'https://accounts.google.com/o/oauth2/v2/auth';
+  const EXCHANGE_URL = 'https://lgqfgbvqzhztssfmiwbi.supabase.co/functions/v1/google-token-exchange';
+  const TOKEN_URL    = 'https://oauth2.googleapis.com/token'; // refresh only
   const SCOPE     = 'https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly';
   const API_URL   = 'https://health.googleapis.com/v4/users/me/dataTypes/steps/dataPoints';
   // Computed at call-time so it always matches the actual page URL,
@@ -1290,13 +1291,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!verifier) throw new Error('missing_verifier');
     localStorage.removeItem(LS_VERIFIER);
     localStorage.removeItem(LS_STATE);
-    const res = await fetch(TOKEN_URL, {
+    const res = await fetch(EXCHANGE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: CLIENT_ID, code, code_verifier: verifier,
-        grant_type: 'authorization_code', redirect_uri: redirectUri(),
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, code_verifier: verifier, redirect_uri: redirectUri() }),
     });
     if (!res.ok) throw new Error('exchange_failed:' + res.status + ' ' + await res.text());
     return res.json();
