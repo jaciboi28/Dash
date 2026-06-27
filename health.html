@@ -1110,8 +1110,9 @@ document.addEventListener('DOMContentLoaded', function () {
   const AUTH_URL     = 'https://accounts.google.com/o/oauth2/v2/auth';
   const EXCHANGE_URL = 'https://lgqfgbvqzhztssfmiwbi.supabase.co/functions/v1/google-token-exchange';
   const TOKEN_URL    = 'https://oauth2.googleapis.com/token'; // refresh only
-  const SCOPE     = 'https://www.googleapis.com/auth/googlehealth.activity_and_fitness.readonly';
-  const API_URL   = 'https://health.googleapis.com/v4/users/me/dataTypes/steps/dataPoints';
+  const SCOPE     = 'https://www.googleapis.com/auth/fitness.activity.read';
+  const API_URL   = 'https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate';
+  const SCOPE_VER = 'v2'; // bump when scope changes to force re-auth
   // Computed at call-time so it always matches the actual page URL,
   // avoiding redirect_uri mismatch errors from trailing-slash or path variations.
   function redirectUri() { return window.location.origin + window.location.pathname; }
@@ -1179,10 +1180,10 @@ document.addEventListener('DOMContentLoaded', function () {
   async function refreshToken() {
     const rt = getRefresh();
     if (!rt) throw new Error('no_refresh_token');
-    const res = await fetch(TOKEN_URL, {
+    const res = await fetch(EXCHANGE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ client_id: CLIENT_ID, grant_type: 'refresh_token', refresh_token: rt }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grant_type: 'refresh_token', refresh_token: rt }),
     });
     if (!res.ok) {
       const body = await res.text();
@@ -1202,36 +1203,29 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // ── Fetch steps ───────────────────────────────────────────────────────────────
-  function todayRange() {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    const end   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-    return { startTime: start.toISOString(), endTime: end.toISOString() };
-  }
-
   async function fetchSteps(token, isRetry) {
-    const { startTime, endTime } = todayRange();
-    const url = new URL(API_URL);
-    url.searchParams.set('startTime', startTime);
-    url.searchParams.set('endTime', endTime);
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: 'Bearer ' + token },
+    const now = new Date();
+    const startMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const endMs   = startMs + 86400000;
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        aggregateBy: [{ dataTypeName: 'com.google.step_count.delta' }],
+        bucketByTime: { durationMillis: 86400000 },
+        startTimeMillis: startMs,
+        endTimeMillis: endMs,
+      }),
     });
     if (res.status === 401 && !isRetry) {
       const fresh = await refreshToken();
       return fetchSteps(fresh, true);
     }
-    if (!res.ok) throw new Error('api_error:' + res.status);
+    if (!res.ok) throw new Error('api_error:' + res.status + ' ' + await res.text());
     const json = await res.json();
-    // v4 dataPoints grammar: sum intVal / fpVal across all dataPoints
-    let total = 0;
-    for (const pt of (json.dataPoints || [])) {
-      for (const v of (pt.value || [])) {
-        if (v.intVal != null)      total += v.intVal;
-        else if (v.fpVal != null)  total += Math.round(v.fpVal);
-      }
-    }
-    return total;
+    return (json.bucket || []).reduce((sum, b) =>
+      sum + (b.dataset || []).reduce((s2, ds) =>
+        s2 + (ds.point || []).reduce((s3, p) => s3 + ((p.value || [])[0]?.intVal || 0), 0), 0), 0);
   }
 
   async function loadSteps() {
@@ -1302,6 +1296,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ── Boot ──────────────────────────────────────────────────────────────────────
   async function boot() {
+    // Clear tokens from a previous scope version so re-auth is forced
+    if (localStorage.getItem('google_health_scope_ver') !== SCOPE_VER) {
+      clearTokens();
+      localStorage.setItem('google_health_scope_ver', SCOPE_VER);
+    }
+
     // Show cached steps immediately for instant paint
     try {
       const cached = JSON.parse(localStorage.getItem(LS_STEPS) || 'null');
