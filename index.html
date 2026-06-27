@@ -643,7 +643,7 @@ body::after {
       <div class="gm-header">
         <div class="gm-header-left">
           <div class="gm-eyebrow" id="tomorrowLabel">Plan tomorrow —</div>
-          <div class="gm-tomorrow-sub">Write tonight, locked until 6 AM.</div>
+          <div class="gm-tomorrow-sub">Write tonight, unlocks at midnight.</div>
         </div>
         <div class="gm-tomorrow-count" id="gmTomorrowCount">0 planned</div>
       </div>
@@ -710,19 +710,12 @@ body::after {
     return p.year + '-' + pad2(p.month) + '-' + pad2(p.day);
   }
   function getActiveDateString() {
-    const now = new Date();
-    if (getUKParts(now).hour < 6) {
-      return dateToKey(new Date(now.getTime() - 6 * 60 * 60 * 1000));
-    }
-    return dateToKey(now);
+    return dateToKey(new Date());
   }
   function getTomorrowDateString() {
     const now = new Date();
-    const { year, month, day, hour } = getUKParts(now);
-    if (hour >= 6) {
-      return dateToKey(new Date(Date.UTC(year, month - 1, day, 12) + 24 * 60 * 60 * 1000));
-    }
-    return dateToKey(now);
+    const { year, month, day } = getUKParts(now);
+    return dateToKey(new Date(Date.UTC(year, month - 1, day, 12) + 24 * 60 * 60 * 1000));
   }
   function formatDate(yyyy_mm_dd) {
     const [y, m, d] = yyyy_mm_dd.split('-').map(Number);
@@ -1041,7 +1034,7 @@ body::after {
     cb.type = 'checkbox';
     cb.className = 'gm-check';
     cb.checked = !!goal.done;
-    if (readOnly) { cb.disabled = true; cb.title = 'Activates at 6 AM tomorrow'; }
+    if (readOnly) { cb.disabled = true; cb.title = 'Activates at midnight'; }
     cb.addEventListener('change', () => {
       const list = getGoals(key);
       if (!list[idx]) return;
