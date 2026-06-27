@@ -1106,13 +1106,13 @@ document.addEventListener('DOMContentLoaded', function () {
   'use strict';
 
   // ── Config ──────────────────────────────────────────────────────────────────
-  const CLIENT_ID    = '346047348007-ihhoq77fbvgtd5dinjkvh6vklplc7050.apps.googleusercontent.com';
+  const CLIENT_ID    = '346047348007-hiscj12nja1c4ss9jld63rlo7kanevn7.apps.googleusercontent.com';
   const AUTH_URL     = 'https://accounts.google.com/o/oauth2/v2/auth';
   const EXCHANGE_URL = 'https://lgqfgbvqzhztssfmiwbi.supabase.co/functions/v1/google-token-exchange';
   const TOKEN_URL    = 'https://oauth2.googleapis.com/token'; // refresh only
-  const SCOPE     = 'https://www.googleapis.com/auth/fitness.activity.read';
-  const API_URL   = 'https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate';
-  const SCOPE_VER = 'v2'; // bump when scope changes to force re-auth
+  const SCOPE     = 'https://www.googleapis.com/auth/health.activity';
+  const API_URL   = 'https://health.googleapis.com/v1/users/me/aggregates';
+  const SCOPE_VER = 'v3'; // bump when scope changes to force re-auth
   // Computed at call-time so it always matches the actual page URL,
   // avoiding redirect_uri mismatch errors from trailing-slash or path variations.
   function redirectUri() { return window.location.origin + window.location.pathname; }
@@ -1205,27 +1205,34 @@ document.addEventListener('DOMContentLoaded', function () {
   // ── Fetch steps ───────────────────────────────────────────────────────────────
   async function fetchSteps(token, isRetry) {
     const now = new Date();
-    const startMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const endMs   = startMs + 86400000;
+    const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    const endTime   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        aggregateBy: [{ dataTypeName: 'com.google.step_count.delta' }],
-        bucketByTime: { durationMillis: 86400000 },
-        startTimeMillis: startMs,
-        endTimeMillis: endMs,
-      }),
+      body: JSON.stringify({ startTime, endTime, aggregateBy: ['STEPS'] }),
     });
     if (res.status === 401 && !isRetry) {
       const fresh = await refreshToken();
       return fetchSteps(fresh, true);
     }
-    if (!res.ok) throw new Error('api_error:' + res.status + ' ' + await res.text());
-    const json = await res.json();
-    return (json.bucket || []).reduce((sum, b) =>
-      sum + (b.dataset || []).reduce((s2, ds) =>
-        s2 + (ds.point || []).reduce((s3, p) => s3 + ((p.value || [])[0]?.intVal || 0), 0), 0), 0);
+    const body = await res.text();
+    if (!res.ok) throw new Error('api_error:' + res.status + ' ' + body);
+    const json = JSON.parse(body);
+    // Log full response so we can inspect the shape if steps come back 0
+    console.log('[health api response]', json);
+    // Try common response shapes
+    if (typeof json.steps === 'number') return json.steps;
+    if (Array.isArray(json.aggregates)) {
+      const agg = json.aggregates.find(a => a.type === 'STEPS' || a.dataType === 'STEPS' || a.metricType === 'STEPS');
+      if (agg) return agg.value ?? agg.intVal ?? agg.count ?? 0;
+    }
+    if (Array.isArray(json.dataPoints)) {
+      return json.dataPoints.reduce((s, p) =>
+        s + (p.value || []).reduce((s2, v) => s2 + (v.intVal || Math.round(v.fpVal || 0)), 0), 0);
+    }
+    // Unknown shape — surface raw JSON briefly so we can adapt
+    throw new Error('unknown_shape: ' + body.slice(0, 200));
   }
 
   async function loadSteps() {
