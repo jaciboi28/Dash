@@ -174,8 +174,8 @@ body::after {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 28px 32px;
+  gap: 16px;
+  padding: 24px 36px;
   margin-bottom: 22px;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.04);
@@ -189,9 +189,19 @@ body::after {
   color: var(--text-secondary);
   letter-spacing: 0.04em;
 }
+.clock-body {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.clock-analog {
+  flex-shrink: 0;
+  width: 110px;
+  height: 110px;
+}
 .clock-time {
   font-family: var(--font-mono);
-  font-size: 64px;
+  font-size: 52px;
   font-weight: 700;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
@@ -205,8 +215,10 @@ body::after {
   letter-spacing: 0.06em;
 }
 @media (max-width: 480px) {
-  .clock-card { padding: 22px 20px; }
-  .clock-time { font-size: 48px; }
+  .clock-card { padding: 20px 16px; gap: 12px; }
+  .clock-body { gap: 18px; }
+  .clock-analog { width: 86px; height: 86px; }
+  .clock-time { font-size: 38px; }
 }
 
 /* ===== Component 4: section + To Do List ===== */
@@ -587,8 +599,11 @@ body::after {
 
   <div class="clock-card">
     <div class="clock-date" id="clockDate">—</div>
-    <div class="clock-time" id="clockTime">00:00:00</div>
-    <div class="clock-tz"   id="clockTz">GMT</div>
+    <div class="clock-body">
+      <svg class="clock-analog" id="analogClock" viewBox="0 0 120 120"></svg>
+      <div class="clock-time" id="clockTime">00:00:00</div>
+    </div>
+    <div class="clock-tz" id="clockTz">GMT</div>
   </div>
 
   <div class="section">
@@ -865,16 +880,86 @@ body::after {
     return (parts.find(p => p.type === 'timeZoneName') || {}).value || 'GMT';
   }
 
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  function buildAnalogFace() {
+    const svg = document.getElementById('analogClock');
+    if (!svg) return;
+    svg.innerHTML = '';
+
+    const face = document.createElementNS(SVG_NS, 'circle');
+    face.setAttribute('cx', '60'); face.setAttribute('cy', '60'); face.setAttribute('r', '56');
+    face.setAttribute('fill', 'rgba(255,255,255,0.03)');
+    face.setAttribute('stroke', 'rgba(255,255,255,0.10)'); face.setAttribute('stroke-width', '1');
+    svg.appendChild(face);
+
+    for (let i = 0; i < 60; i++) {
+      const angle = (i * 6 - 90) * Math.PI / 180;
+      const major = i % 5 === 0;
+      const mark = document.createElementNS(SVG_NS, 'line');
+      mark.setAttribute('x1', String(60 + (major ? 46 : 50) * Math.cos(angle)));
+      mark.setAttribute('y1', String(60 + (major ? 46 : 50) * Math.sin(angle)));
+      mark.setAttribute('x2', String(60 + 53 * Math.cos(angle)));
+      mark.setAttribute('y2', String(60 + 53 * Math.sin(angle)));
+      mark.setAttribute('stroke', major ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.12)');
+      mark.setAttribute('stroke-width', major ? '2' : '1');
+      mark.setAttribute('stroke-linecap', 'round');
+      svg.appendChild(mark);
+    }
+
+    [
+      { id: 'analogHourHand',   stroke: 'rgba(250,250,250,0.92)', width: '4'   },
+      { id: 'analogMinuteHand', stroke: 'rgba(250,250,250,0.80)', width: '2.5' },
+      { id: 'analogSecondHand', stroke: '#F2C063',                width: '1.5' },
+    ].forEach(({ id, stroke, width }) => {
+      const line = document.createElementNS(SVG_NS, 'line');
+      line.setAttribute('id', id);
+      line.setAttribute('stroke', stroke);
+      line.setAttribute('stroke-width', width);
+      line.setAttribute('stroke-linecap', 'round');
+      svg.appendChild(line);
+    });
+
+    const outer = document.createElementNS(SVG_NS, 'circle');
+    outer.setAttribute('cx', '60'); outer.setAttribute('cy', '60'); outer.setAttribute('r', '3.5');
+    outer.setAttribute('fill', '#FAFAFA');
+    svg.appendChild(outer);
+
+    const inner = document.createElementNS(SVG_NS, 'circle');
+    inner.setAttribute('cx', '60'); inner.setAttribute('cy', '60'); inner.setAttribute('r', '1.8');
+    inner.setAttribute('fill', '#F2C063');
+    svg.appendChild(inner);
+  }
+
+  function setAnalogHand(id, angleDeg, tipLen, tailLen) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const rad = (angleDeg - 90) * Math.PI / 180;
+    el.setAttribute('x1', String(60 - tailLen * Math.cos(rad)));
+    el.setAttribute('y1', String(60 - tailLen * Math.sin(rad)));
+    el.setAttribute('x2', String(60 + tipLen  * Math.cos(rad)));
+    el.setAttribute('y2', String(60 + tipLen  * Math.sin(rad)));
+  }
+
+  function updateAnalogHands(date) {
+    const { hour, minute, second } = getUKParts(date);
+    setAnalogHand('analogHourHand',   (hour % 12) * 30 + minute * 0.5,  32, 8);
+    setAnalogHand('analogMinuteHand', minute * 6  + second * 0.1,        42, 10);
+    setAnalogHand('analogSecondHand', second * 6,                         46, 14);
+  }
+
   function updateClock() {
     const now = new Date();
     const timeEl = document.getElementById('clockTime');
     const dateEl = document.getElementById('clockDate');
     if (timeEl) timeEl.textContent = formatClockTime(now);
     if (dateEl) dateEl.textContent = formatClockDate(now);
+    updateAnalogHands(now);
   }
 
   function startClock() {
     document.getElementById('clockTz').textContent = getUKTZLabel();
+    buildAnalogFace();
     updateClock();
     setInterval(updateClock, 1000);
   }
