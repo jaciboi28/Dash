@@ -1298,7 +1298,23 @@ body::after {
   loadTomorrow();
   renderStreak();
   updateDayRing();
-  setInterval(updateDayRing, 60 * 1000);
+
+  // Every minute: check if the date boundary (midnight or 6 AM) has passed
+  // and re-render lists if so. Uses local timezone throughout.
+  let _lastActiveDate = getActiveDateString();
+  setInterval(() => {
+    updateDayRing();
+    const cur = getActiveDateString();
+    if (cur !== _lastActiveDate) {
+      _lastActiveDate = cur;
+      rollover();
+      loadToday();
+      loadTomorrow();
+      renderStreak();
+      processStreak();
+    }
+  }, 60 * 1000);
+
   startTicker();
 
   // Re-render when storage changes from another tab (or our bridged parent).
