@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#050506">
+<meta name="color-scheme" content="dark">
+<title>Streaks</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="sync.js" defer></script>
+<script src="topbar.js" defer></script>
+<style>
+:root {
+  --bg: #050506;
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --bg-secondary: rgba(255, 255, 255, 0.035);
+  --bg-input: rgba(0, 0, 0, 0.28);
+  --bg-input-focus: rgba(0, 0, 0, 0.36);
+
+  --border: rgba(255, 255, 255, 0.06);
+  --border-soft: rgba(255, 255, 255, 0.04);
+  --border-strong: rgba(255, 255, 255, 0.12);
+
+  --text-primary: #FAFAFA;
+  --text-secondary: #B8B6B0;
+  --text-tertiary: #76746E;
+  --text-quaternary: #4D4B47;
+
+  --accent: #1D9E75;
+  --accent-glow: rgba(29, 158, 117, 0.35);
+  --warning: #FF8A4D;
+
+  --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 15px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body { min-height: 100vh; position: relative; overflow-x: hidden; }
+
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(60% 50% at 82% 14%, rgba(255, 140, 60, 0.12) 0%, transparent 60%),
+    radial-gradient(50% 40% at 18% 90%, rgba(180, 180, 200, 0.06) 0%, transparent 60%);
+  filter: blur(40px);
+  pointer-events: none; z-index: 0;
+  animation: drift 36s ease-in-out infinite alternate;
+}
+body::after {
+  content: ''; position: fixed; inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,0.014) 1px, transparent 1px);
+  background-size: 3px 3px;
+  pointer-events: none; z-index: 1;
+}
+@keyframes drift { 0% { transform: translate(0, 0); } 100% { transform: translate(-2%, 2%); } }
+
+main {
+  position: relative; z-index: 2;
+  max-width: 720px; margin: 0 auto;
+  padding: 56px max(20px, env(safe-area-inset-right)) 80px max(20px, env(safe-area-inset-left));
+  padding-top: max(56px, env(safe-area-inset-top, 56px));
+}
+
+.section-title {
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin: 0 4px 14px;
+  display: flex; align-items: center; gap: 12px;
+}
+.section-title::before { content: '≡'; font-size: 14px; opacity: 0.5; }
+
+/* ── Card ── */
+.streaks-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 6px 0 0;
+  overflow: hidden;
+}
+
+/* ── Empty state ── */
+.streaks-empty {
+  padding: 36px 20px;
+  text-align: center;
+  color: var(--text-quaternary);
+  font-size: 13px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+/* ── Streak row ── */
+.streak-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-soft);
+  transition: background 0.12s;
+}
+.streak-row:last-of-type { border-bottom: none; }
+
+.streak-flame { font-size: 20px; flex-shrink: 0; line-height: 1; }
+.streak-name {
+  flex: 1; min-width: 0;
+  font-size: 14px; font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.streak-count-wrap {
+  display: flex; align-items: center; gap: 5px;
+  flex-shrink: 0;
+}
+.streak-count {
+  font-family: var(--font-mono);
+  font-size: 22px; font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  min-width: 2ch; text-align: right;
+}
+.streak-count-flame { font-size: 16px; line-height: 1; }
+
+.streak-btns {
+  display: flex; gap: 6px; flex-shrink: 0; margin-left: 4px;
+}
+.streak-btn {
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 9px; border: 1px solid var(--border-strong);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+  font-family: var(--font-mono); font-size: 15px; font-weight: 700;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: background 0.14s, transform 0.10s;
+}
+.streak-btn:active { transform: scale(0.91); }
+.streak-btn:hover { background: rgba(255,255,255,0.08); }
+.streak-btn.minus { font-size: 18px; }
+.streak-btn.reset { font-size: 13px; color: var(--text-tertiary); }
+.streak-btn.plus {
+  border-color: rgba(255,165,0,0.3);
+  background: rgba(255,140,30,0.08);
+  color: #ffb347;
+}
+.streak-btn.plus:hover { background: rgba(255,140,30,0.15); }
+
+/* ── Add button ── */
+.streaks-add-btn {
+  display: block; width: 100%;
+  padding: 14px;
+  background: transparent;
+  border: none; border-top: 1px solid var(--border-soft);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: background 0.14s, color 0.14s;
+}
+.streaks-add-btn:hover { background: rgba(255,255,255,0.03); color: var(--text-secondary); }
+
+/* ── Modal ── */
+.modal-bg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+  z-index: 100; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.modal-bg.show { display: flex; }
+.modal {
+  width: 100%; max-width: 380px;
+  background: #0f0f12;
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  padding: 24px;
+}
+.modal h3 {
+  margin: 0 0 18px;
+  font-size: 17px; font-weight: 700; color: var(--text-primary);
+}
+.modal-input {
+  width: 100%; padding: 11px 14px;
+  background: var(--bg-input); border: 1px solid var(--border-strong);
+  border-radius: 10px; color: var(--text-primary);
+  font-family: var(--font); font-size: 15px;
+  outline: none; margin-bottom: 18px;
+  transition: border-color 0.15s;
+}
+.modal-input:focus { border-color: rgba(255,255,255,0.3); }
+.modal-input::placeholder { color: var(--text-quaternary); }
+.modal-actions { display: flex; gap: 8px; }
+.modal-btn {
+  flex: 1; padding: 11px;
+  border-radius: 10px; border: 1px solid var(--border-strong);
+  font-family: var(--font); font-size: 14px; font-weight: 600;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: background 0.14s;
+}
+.modal-btn-cancel {
+  background: rgba(255,255,255,0.04); color: var(--text-secondary);
+}
+.modal-btn-cancel:hover { background: rgba(255,255,255,0.08); }
+.modal-btn-confirm {
+  background: rgba(255,140,30,0.18); color: #ffb347;
+  border-color: rgba(255,140,30,0.3);
+}
+.modal-btn-confirm:hover { background: rgba(255,140,30,0.28); }
+
+@media (max-width: 600px) {
+  main { padding: 40px 16px 60px; }
+  .streak-row { padding: 12px 14px; gap: 10px; }
+  .streak-count { font-size: 20px; }
+  .streak-btn { width: 32px; height: 32px; }
+  .modal-bg { padding: 0; align-items: flex-end; }
+  .modal { border-radius: 16px 16px 0 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom)); max-width: 100%; }
+}
+
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.15); }
+</style>
+</head>
+<body>
+
+<main>
+  <div class="section-title">Streaks</div>
+
+  <div class="streaks-card" id="streaksCard">
+    <div class="streaks-empty" id="streaksEmpty">No streaks yet — tap Add to create one</div>
+    <div id="streaksList"></div>
+    <button class="streaks-add-btn" id="streaksAddBtn">+ Add streak</button>
+  </div>
+</main>
+
+<!-- Add Streak Modal -->
+<div class="modal-bg" id="streakModalBg">
+  <div class="modal">
+    <h3>New streak</h3>
+    <input type="text" id="streakNameInput" class="modal-input" placeholder="e.g. Gym, No alcohol, Reading…" maxlength="40" autocomplete="off" spellcheck="false" />
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" id="streakCancelBtn">Cancel</button>
+      <button class="modal-btn modal-btn-confirm" id="streakConfirmBtn">Add</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const LS_KEY = 'streaks:items';
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch { return []; }
+  }
+  function save(items) {
+    localStorage.setItem(LS_KEY, JSON.stringify(items));
+  }
+
+  function render() {
+    const items = load();
+    const list = document.getElementById('streaksList');
+    const empty = document.getElementById('streaksEmpty');
+    if (!list) return;
+
+    empty.style.display = items.length ? 'none' : 'block';
+    list.innerHTML = '';
+
+    items.forEach((item) => {
+      const row = document.createElement('div');
+      row.className = 'streak-row';
+      row.innerHTML = `
+        <span class="streak-flame">🔥</span>
+        <span class="streak-name">${escHtml(item.name)}</span>
+        <div class="streak-count-wrap">
+          <span class="streak-count" id="count-${item.id}">${item.count}</span>
+          <span class="streak-count-flame">🔥</span>
+        </div>
+        <div class="streak-btns">
+          <button class="streak-btn minus" data-id="${item.id}" data-action="dec" aria-label="Decrease">−</button>
+          <button class="streak-btn plus"  data-id="${item.id}" data-action="inc" aria-label="Increase">+</button>
+          <button class="streak-btn reset" data-id="${item.id}" data-action="reset" aria-label="Reset">↺</button>
+        </div>`;
+      list.appendChild(row);
+    });
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function mutate(id, fn) {
+    const items = load();
+    const idx = items.findIndex(i => i.id === id);
+    if (idx === -1) return;
+    fn(items[idx]);
+    save(items);
+    const countEl = document.getElementById('count-' + id);
+    if (countEl) countEl.textContent = items[idx].count;
+  }
+
+  document.getElementById('streaksList').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const action = btn.dataset.action;
+    if (action === 'inc')   mutate(id, item => { item.count++; });
+    if (action === 'dec')   mutate(id, item => { item.count = Math.max(0, item.count - 1); });
+    if (action === 'reset') mutate(id, item => { item.count = 0; });
+  });
+
+  // ── Modal ──
+  const modalBg     = document.getElementById('streakModalBg');
+  const nameInput   = document.getElementById('streakNameInput');
+  const cancelBtn   = document.getElementById('streakCancelBtn');
+  const confirmBtn  = document.getElementById('streakConfirmBtn');
+  const addBtn      = document.getElementById('streaksAddBtn');
+
+  function openModal() {
+    nameInput.value = '';
+    modalBg.classList.add('show');
+    document.body.classList.add('topbar-modal-open');
+    setTimeout(() => nameInput.focus(), 60);
+  }
+  function closeModal() {
+    modalBg.classList.remove('show');
+    document.body.classList.remove('topbar-modal-open');
+  }
+  function addStreak() {
+    const name = nameInput.value.trim();
+    if (!name) { nameInput.focus(); return; }
+    const items = load();
+    items.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, count: 0 });
+    save(items);
+    render();
+    closeModal();
+  }
+
+  addBtn.addEventListener('click', openModal);
+  cancelBtn.addEventListener('click', closeModal);
+  confirmBtn.addEventListener('click', addStreak);
+  nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addStreak(); if (e.key === 'Escape') closeModal(); });
+  modalBg.addEventListener('click', (e) => { if (e.target === modalBg) closeModal(); });
+
+  // ── Sync ──
+  window.addEventListener('DOMContentLoaded', () => {
+    render();
+    if (window.initCloudSync) {
+      window.initCloudSync({
+        appKey: 'streaks',
+        syncedKeys: [LS_KEY],
+        syncedPrefixes: [],
+        onApplied: render,
+      });
+    }
+  });
+
+  window.addEventListener('storage', (e) => { if (e.key === LS_KEY) render(); });
+})();
+</script>
+</body>
+</html>
