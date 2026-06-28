@@ -516,7 +516,7 @@ main {
 
   <section id="water" class="water-embed">
     <div class="section-title">Water Tracker</div>
-    <iframe src="po-water.html" class="water-iframe" scrolling="no" loading="lazy" title="Water Tracker" id="waterIframe"></iframe>
+    <iframe src="po-water.html" class="water-iframe" loading="lazy" title="Water Tracker" id="waterIframe"></iframe>
   </section>
 
 
@@ -1038,20 +1038,26 @@ main {
 })();
 </script>
 <script>
-// Auto-resize the water iframe so its content flows with the page
-// instead of scrolling inside its own box.
+// Auto-resize the water iframe to its full content height so the
+// parent page scrolls naturally over it (no internal iframe scroll).
+// We avoid setting height=0 before measuring (causes iOS snap) and
+// avoid scrolling="no" / overflow:hidden injection (same issue).
+// iOS naturally passes scroll gestures to the parent when there is
+// nothing left to scroll inside the iframe.
 (function () {
   var iframe = document.getElementById('waterIframe');
   if (!iframe) return;
+  var lastH = 0;
 
   function fitHeight() {
     try {
       var doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
       if (!doc || !doc.body) return;
-      // Temporarily collapse height so scrollHeight reflects true content size
-      iframe.style.height = '0';
       var h = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, 400);
-      iframe.style.height = h + 'px';
+      if (Math.abs(h - lastH) > 4) {
+        lastH = h;
+        iframe.style.height = h + 'px';
+      }
     } catch (e) {}
   }
 
@@ -1059,14 +1065,8 @@ main {
     fitHeight();
     try {
       var iDoc = iframe.contentDocument || iframe.contentWindow.document;
-      // Suppress internal scroll on the iframe page
-      var s = iDoc.createElement('style');
-      s.textContent = 'html,body{overflow:hidden!important;height:auto!important;}';
-      iDoc.head.appendChild(s);
-      // Re-fit whenever the iframe's DOM changes (modals, inputs, etc.)
       var mo = new MutationObserver(fitHeight);
-      mo.observe(iDoc.body, { childList: true, subtree: true, attributes: true, characterData: true });
-      // Fallback poll for animated height changes
+      mo.observe(iDoc.body, { childList: true, subtree: true, attributes: true });
       setInterval(fitHeight, 800);
     } catch (e) {}
   });
