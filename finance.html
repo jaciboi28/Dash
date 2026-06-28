@@ -1568,6 +1568,140 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 @media (max-width: 600px) {
   .sub-auto-toggle { width: 100%; justify-content: space-between; padding: 12px 14px; }
 }
+
+/* ============================================================
+   SALARY TAB
+   ============================================================ */
+.sal-hero {
+  background: linear-gradient(135deg, rgba(107,227,164,0.08), rgba(125,211,252,0.04)) !important;
+  border: 1px solid rgba(107,227,164,0.20) !important;
+  position: relative; overflow: hidden;
+}
+.sal-hero-eyebrow {
+  font-size: 10px; letter-spacing: 0.20em; font-weight: 700;
+  text-transform: uppercase; color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+.sal-hero-period {
+  font-size: 22px; font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text-primary); line-height: 1; margin-bottom: 4px;
+}
+.sal-hero-dates {
+  font-size: 12px; color: var(--text-tertiary);
+  font-family: var(--font-mono); margin-bottom: 16px;
+}
+.sal-hero-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 12px; padding: 12px;
+  background: rgba(0,0,0,0.20); border-radius: 10px;
+}
+@media (max-width: 500px) { .sal-hero-grid { grid-template-columns: 1fr 1fr; } }
+.sal-stat { display: flex; flex-direction: column; gap: 3px; }
+.sal-stat-label {
+  font-size: 9px; letter-spacing: 0.16em; font-weight: 800;
+  text-transform: uppercase; color: var(--text-tertiary); font-family: var(--font-mono);
+}
+.sal-stat-val {
+  font-size: 17px; font-weight: 700; color: var(--text-primary);
+  font-variant-numeric: tabular-nums; font-family: var(--font-mono);
+}
+.sal-stat-val.green { color: #6BE3A4; }
+.sal-stat-val.small { font-size: 12px; }
+.sal-pay-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 14px; padding: 9px 14px;
+  background: rgba(107,227,164,0.10);
+  border: 1px solid rgba(107,227,164,0.20); border-radius: 10px;
+  font-size: 13px; font-weight: 600; color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+.sal-pay-badge strong { color: #6BE3A4; }
+.sal-pay-countdown {
+  font-size: 11px; color: var(--text-tertiary);
+  font-family: var(--font-mono); background: rgba(0,0,0,0.20);
+  padding: 3px 8px; border-radius: 999px;
+}
+.sal-pay-countdown.soon { color: #F2C063; background: rgba(242,192,99,0.10); }
+.sal-pay-countdown.today { color: #6BE3A4; background: rgba(107,227,164,0.10); }
+
+.sal-rate-row {
+  display: flex; align-items: center; gap: 4px;
+  padding: 4px; background: rgba(0,0,0,0.30); border-radius: 12px; margin-top: 10px;
+}
+.sal-rate-prefix {
+  padding: 9px 4px 9px 16px; font-size: 22px; font-weight: 700;
+  color: var(--text-tertiary); flex-shrink: 0;
+}
+.sal-rate-input {
+  flex: 1; min-width: 0; background: transparent; border: none; outline: none;
+  color: var(--text-primary); font-size: 26px; font-weight: 700;
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield; padding: 6px 4px;
+}
+.sal-rate-input::-webkit-outer-spin-button,
+.sal-rate-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.sal-rate-input::placeholder { color: var(--text-quaternary); }
+.sal-rate-label {
+  font-size: 10px; letter-spacing: 0.12em; font-weight: 700;
+  color: var(--text-tertiary); font-family: var(--font-mono);
+  text-transform: uppercase; padding: 0 16px 0 4px; white-space: nowrap;
+}
+.sal-rate-hint {
+  font-size: 11px; color: var(--text-tertiary); margin-top: 8px; font-style: italic;
+}
+
+.sal-period-row {
+  background: rgba(255,255,255,0.025); border-radius: 12px;
+  padding: 12px 14px; margin-bottom: 8px;
+  display: grid; grid-template-columns: 1fr auto auto;
+  gap: 12px; align-items: center; transition: background 0.15s;
+}
+.sal-period-row:hover { background: rgba(255,255,255,0.045); }
+.sal-period-row.is-current {
+  background: rgba(107,227,164,0.06);
+  border: 1px solid rgba(107,227,164,0.15);
+}
+.sal-period-name { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.sal-period-meta {
+  font-size: 10.5px; color: var(--text-tertiary); margin-top: 2px;
+  font-family: var(--font-mono);
+}
+.sal-period-right { text-align: right; }
+.sal-period-pay {
+  font-size: 15px; font-weight: 700; color: var(--text-tertiary);
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+}
+.sal-period-pay.earned { color: #6BE3A4; }
+.sal-period-paydate { font-size: 10px; color: var(--text-tertiary); font-family: var(--font-mono); margin-top: 2px; }
+.sal-badge {
+  font-size: 9px; letter-spacing: 0.12em; font-weight: 800;
+  text-transform: uppercase; padding: 4px 9px; border-radius: 999px;
+  font-family: var(--font-mono); white-space: nowrap;
+}
+.sal-badge.current  { background: rgba(107,227,164,0.15); color: #6BE3A4; }
+.sal-badge.past     { background: rgba(255,255,255,0.05); color: var(--text-tertiary); }
+.sal-badge.upcoming { background: rgba(125,211,252,0.10); color: #BFE3F8; }
+
+.sal-days-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+.sal-day-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px; background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 999px;
+  font-size: 11px; font-weight: 600; color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+.sal-day-chip.in-current {
+  background: rgba(107,227,164,0.08);
+  border-color: rgba(107,227,164,0.20); color: #6BE3A4;
+}
+.sal-day-del {
+  background: transparent; border: none; color: inherit;
+  cursor: pointer; font-size: 13px; padding: 0 2px; opacity: 0.5; line-height: 1;
+}
+.sal-day-del:hover { opacity: 1; }
+.sal-no-days {
+  font-size: 11px; color: var(--text-tertiary); font-style: italic; padding: 4px 0;
+}
 </style>
 </head>
 <body>
@@ -1864,6 +1998,46 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   </div>
 </div>
 
+<!-- ===== SALARY ===== -->
+<div class="section" data-section="salary">
+  <div class="section-title">
+    <span class="section-title-text">SALARY</span>
+  </div>
+
+  <!-- Daily rate -->
+  <div class="card">
+    <div class="label">💷 DAILY PAY RATE</div>
+    <div class="sal-rate-row">
+      <span class="sal-rate-prefix">£</span>
+      <input type="number" id="salRate" class="sal-rate-input" placeholder="0.00" step="0.01" min="0">
+      <span class="sal-rate-label">per&nbsp;day</span>
+    </div>
+    <div class="sal-rate-hint">Saves automatically as you type.</div>
+  </div>
+
+  <!-- Current period hero -->
+  <div class="card sal-hero" id="salHero">
+    <div class="sal-rate-hint" style="margin-top:0">Loading…</div>
+  </div>
+
+  <!-- Add a worked day -->
+  <div class="card" style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.05)">
+    <div class="label">+ LOG A WORKED DAY</div>
+    <div class="quick-add">
+      <label class="date-field" style="flex:1"><span class="date-emoji">📅</span><input type="date" id="salDayInput"></label>
+      <button class="quick-add-btn" id="salAddDayBtn">+ Add Day</button>
+    </div>
+    <div id="salDaysList" class="sal-days-wrap" style="margin-top:12px"></div>
+  </div>
+
+  <!-- All pay periods -->
+  <div style="margin:20px 0 8px;display:flex;justify-content:space-between;align-items:center">
+    <div style="font-size:10px;letter-spacing:0.18em;font-weight:800;text-transform:uppercase;color:var(--text-tertiary);font-family:var(--font-mono)">ALL PAY PERIODS</div>
+    <div id="salTotalEarned" style="font-size:12px;color:var(--text-secondary);font-family:var(--font-mono)"></div>
+  </div>
+  <div id="salPeriodList"></div>
+</div>
+
 </div>
 
 <!-- ===== BOTTOM TAB BAR ===== -->
@@ -1883,6 +2057,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   <button class="bot-tab" data-tab="wish">
     <span class="bot-tab-icon">🎯</span>
     <span class="bot-tab-label">Wishlist</span>
+  </button>
+  <button class="bot-tab" data-tab="salary">
+    <span class="bot-tab-icon">💷</span>
+    <span class="bot-tab-label">Salary</span>
   </button>
 </nav>
 
@@ -1933,7 +2111,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
   tabs.forEach(b => b.addEventListener('click', () => setActiveTab(b.dataset.tab)));
   const savedTab = storeGet(TAB_KEY);
-  setActiveTab(savedTab && ['net','subs','incoming','wish'].includes(savedTab) ? savedTab : 'net');
+  setActiveTab(savedTab && ['net','subs','incoming','wish','salary'].includes(savedTab) ? savedTab : 'net');
 
   // ============================================================
   // NET WORTH (copied from the main dashboard, verbatim logic)
@@ -3375,6 +3553,209 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   safeRenderTicker();
   setInterval(safeRenderTicker, 1500);
 
+  // ============================================================
+  // SALARY
+  // ============================================================
+  const SAL_RATE_KEY = 'salary_daily_rate';
+  const SAL_DAYS_KEY = 'salary_worked_days';
+
+  // Cutoff periods: days worked between from/to get paid on the last
+  // working day of payYear/payMonth (payMonth is 0-indexed).
+  const SALARY_PERIODS = [
+    { month: 'April 2026',     from: '2026-03-16', to: '2026-04-12', payYear: 2026, payMonth: 3  },
+    { month: 'May 2026',       from: '2026-04-13', to: '2026-05-17', payYear: 2026, payMonth: 4  },
+    { month: 'June 2026',      from: '2026-05-18', to: '2026-06-14', payYear: 2026, payMonth: 5  },
+    { month: 'July 2026',      from: '2026-06-15', to: '2026-07-12', payYear: 2026, payMonth: 6  },
+    { month: 'August 2026',    from: '2026-07-13', to: '2026-08-09', payYear: 2026, payMonth: 7  },
+    { month: 'September 2026', from: '2026-08-10', to: '2026-09-13', payYear: 2026, payMonth: 8  },
+    { month: 'October 2026',   from: '2026-09-14', to: '2026-10-11', payYear: 2026, payMonth: 9  },
+    { month: 'November 2026',  from: '2026-10-12', to: '2026-11-15', payYear: 2026, payMonth: 10 },
+    { month: 'December 2026',  from: '2026-11-16', to: '2026-12-13', payYear: 2026, payMonth: 11 },
+    { month: 'January 2027',   from: '2026-12-14', to: '2027-01-10', payYear: 2027, payMonth: 0  },
+    { month: 'February 2027',  from: '2027-01-11', to: '2027-02-07', payYear: 2027, payMonth: 1  },
+    { month: 'March 2027',     from: '2027-02-08', to: '2027-03-14', payYear: 2027, payMonth: 2  },
+  ];
+
+  function salLastWorkingDay(year, month) {
+    // Last Mon-Fri of the given month (month is 0-indexed)
+    let d = new Date(year, month + 1, 0);
+    while (d.getDay() === 0 || d.getDay() === 6) { d.setDate(d.getDate() - 1); }
+    return d;
+  }
+
+  function salIsoKey(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function salLoadDays() { return storeGet(SAL_DAYS_KEY) || []; }
+  function salSaveDays(days) { storeSet(SAL_DAYS_KEY, days); }
+  function salGetRate() { return Number(storeGet(SAL_RATE_KEY)) || 0; }
+
+  function salFmtGBP(n) {
+    return '£' + Number(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function salFmtShort(iso) {
+    const [y, m, d] = iso.split('-');
+    const mons = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return parseInt(d, 10) + ' ' + mons[parseInt(m, 10) - 1];
+  }
+
+  function salFmtFull(d) {
+    const mons = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const dow  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    return dow[d.getDay()] + ' ' + d.getDate() + ' ' + mons[d.getMonth()] + ' ' + d.getFullYear();
+  }
+
+  function salFmtDayChip(iso) {
+    const d = new Date(iso + 'T00:00');
+    const dow = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    return dow[d.getDay()] + ' ' + salFmtShort(iso);
+  }
+
+  function salCurrentPeriod(todayIso) {
+    return SALARY_PERIODS.find(p => todayIso >= p.from && todayIso <= p.to) || null;
+  }
+
+  function renderSalary() {
+    const rate = salGetRate();
+    const days = salLoadDays().slice().sort();
+    const todayD = new Date();
+    const todayStart = new Date(todayD.getFullYear(), todayD.getMonth(), todayD.getDate());
+    const todayIso = salIsoKey(todayD);
+    const curPeriod = salCurrentPeriod(todayIso);
+
+    // Rate input — don't overwrite while user is typing
+    const rateEl = document.getElementById('salRate');
+    if (rateEl && !rateEl.matches(':focus')) {
+      rateEl.value = rate > 0 ? rate : '';
+    }
+
+    // Hero — current period
+    const heroEl = document.getElementById('salHero');
+    if (heroEl) {
+      if (!curPeriod) {
+        heroEl.innerHTML = '<div style="font-size:13px;color:var(--text-tertiary);text-align:center;padding:8px 0">No active pay period — schedule ends March 2027.</div>';
+      } else {
+        const periodDays = days.filter(d => d >= curPeriod.from && d <= curPeriod.to);
+        const payD = salLastWorkingDay(curPeriod.payYear, curPeriod.payMonth);
+        const payStart = new Date(payD.getFullYear(), payD.getMonth(), payD.getDate());
+        const daysUntil = Math.round((payStart - todayStart) / 86400000);
+        const earned = periodDays.length * rate;
+        const countLabel = daysUntil < 0 ? 'overdue'
+          : daysUntil === 0 ? 'TODAY'
+          : daysUntil === 1 ? 'tomorrow'
+          : 'in ' + daysUntil + ' days';
+        const countCls = daysUntil <= 0 ? 'today' : daysUntil <= 7 ? 'soon' : '';
+        heroEl.innerHTML =
+          '<div class="sal-hero-eyebrow">CURRENT PAY PERIOD</div>'
+          + '<div class="sal-hero-period">' + escapeHtml(curPeriod.month) + '</div>'
+          + '<div class="sal-hero-dates">' + salFmtShort(curPeriod.from) + ' – ' + salFmtShort(curPeriod.to) + ' ' + curPeriod.to.slice(0, 4) + '</div>'
+          + '<div class="sal-hero-grid">'
+          +   '<div class="sal-stat"><div class="sal-stat-label">Days Worked</div><div class="sal-stat-val">' + periodDays.length + '</div></div>'
+          +   '<div class="sal-stat"><div class="sal-stat-label">Earned So Far</div><div class="sal-stat-val green">' + (rate > 0 ? salFmtGBP(earned) : periodDays.length + ' day' + (periodDays.length !== 1 ? 's' : '')) + '</div></div>'
+          +   '<div class="sal-stat"><div class="sal-stat-label">Pay Date</div><div class="sal-stat-val small">' + escapeHtml(salFmtFull(payD)) + '</div></div>'
+          + '</div>'
+          + '<div class="sal-pay-badge">'
+          +   '<strong>' + escapeHtml(salFmtFull(payD)) + '</strong>'
+          +   '<span class="sal-pay-countdown' + (countCls ? ' ' + countCls : '') + '">' + countLabel + '</span>'
+          + '</div>';
+      }
+    }
+
+    // Logged days chips
+    const daysListEl = document.getElementById('salDaysList');
+    if (daysListEl) {
+      if (!days.length) {
+        daysListEl.innerHTML = '<span class="sal-no-days">No days logged yet — use the date picker above.</span>';
+      } else {
+        daysListEl.innerHTML = [...days].reverse().map(iso => {
+          const inCur = curPeriod && iso >= curPeriod.from && iso <= curPeriod.to;
+          return '<span class="sal-day-chip' + (inCur ? ' in-current' : '') + '">'
+            + escapeHtml(salFmtDayChip(iso))
+            + '<button class="sal-day-del" data-iso="' + escapeHtml(iso) + '" title="Remove day">×</button>'
+            + '</span>';
+        }).join('');
+      }
+    }
+
+    // All periods list
+    const periodListEl = document.getElementById('salPeriodList');
+    if (periodListEl) {
+      let totalEarned = 0;
+      periodListEl.innerHTML = SALARY_PERIODS.map(p => {
+        const pDays = days.filter(d => d >= p.from && d <= p.to);
+        const pay = pDays.length * rate;
+        const payD = salLastWorkingDay(p.payYear, p.payMonth);
+        const isCur = curPeriod && p.month === curPeriod.month;
+        const isPast = todayIso > p.to;
+        const status = isCur ? 'current' : isPast ? 'past' : 'upcoming';
+        const statusLabel = isCur ? 'Current' : isPast ? 'Past' : 'Upcoming';
+        if (pay > 0) totalEarned += pay;
+        const payStr = rate > 0 ? salFmtGBP(pay) : (pDays.length + ' day' + (pDays.length !== 1 ? 's' : ''));
+        return '<div class="sal-period-row' + (isCur ? ' is-current' : '') + '">'
+          + '<div>'
+          +   '<div class="sal-period-name">' + escapeHtml(p.month) + '</div>'
+          +   '<div class="sal-period-meta">' + salFmtShort(p.from) + ' – ' + salFmtShort(p.to) + ' &nbsp;·&nbsp; ' + pDays.length + ' day' + (pDays.length !== 1 ? 's' : '') + '</div>'
+          + '</div>'
+          + '<div class="sal-period-right">'
+          +   '<div class="sal-period-pay' + (pay > 0 || pDays.length > 0 ? ' earned' : '') + '">' + payStr + '</div>'
+          +   '<div class="sal-period-paydate">Pay ' + salFmtFull(payD) + '</div>'
+          + '</div>'
+          + '<span class="sal-badge ' + status + '">' + statusLabel + '</span>'
+          + '</div>';
+      }).join('');
+
+      const totalEl = document.getElementById('salTotalEarned');
+      if (totalEl) {
+        totalEl.textContent = totalEarned > 0 && rate > 0 ? 'Total: ' + salFmtGBP(totalEarned) : '';
+      }
+    }
+  }
+
+  // Rate — auto-save on input
+  (function () {
+    const el = document.getElementById('salRate');
+    if (!el) return;
+    el.addEventListener('input', function () {
+      const v = parseFloat(el.value);
+      storeSet(SAL_RATE_KEY, isNaN(v) || v < 0 ? 0 : v);
+      renderSalary();
+    });
+  })();
+
+  // Add day
+  (function () {
+    const input = document.getElementById('salDayInput');
+    const btn   = document.getElementById('salAddDayBtn');
+    function addDay() {
+      if (!input || !input.value) return;
+      const iso  = input.value;
+      const days = salLoadDays();
+      if (!days.includes(iso)) { days.push(iso); salSaveDays(days); }
+      input.value = '';
+      renderSalary();
+    }
+    if (btn)   btn.addEventListener('click', addDay);
+    if (input) input.addEventListener('keydown', function (e) { if (e.key === 'Enter') addDay(); });
+  })();
+
+  // Delete day — event delegation on the chips container
+  (function () {
+    const el = document.getElementById('salDaysList');
+    if (!el) return;
+    el.addEventListener('click', function (e) {
+      const btn = e.target.closest('[data-iso]');
+      if (!btn) return;
+      const iso  = btn.dataset.iso;
+      const days = salLoadDays().filter(function (d) { return d !== iso; });
+      salSaveDays(days);
+      renderSalary();
+    });
+  })();
+
+  renderSalary();
+
 })();
 </script>
 <script>
@@ -3382,7 +3763,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (typeof initCloudSync !== 'function') return;
   initCloudSync({
     appKey: 'finance',
-    syncedKeys: ['subs', 'wishlist', 'incoming_orders', 'nw_currency', 'nw:activity', 'nw:history'],
+    syncedKeys: ['subs', 'wishlist', 'incoming_orders', 'nw_currency', 'nw:activity', 'nw:history', 'salary_daily_rate', 'salary_worked_days'],
     syncedPrefixes: ['nw:'],
     onApplied: function () { window.dispatchEvent(new Event('storage')); }
   });
