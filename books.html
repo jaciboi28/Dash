@@ -121,14 +121,15 @@ html, body {
 .bk-badge.want    { background: rgba(167,139,250,0.14); color: var(--book); }
 .bk-genre  { font-size: 11px; color: var(--text-4); }
 .bk-pages  { font-size: 11px; color: var(--text-4); font-variant-numeric: tabular-nums; }
-.bk-delete {
+.bk-row-btns { display: flex; gap: 2px; flex-shrink: 0; margin-top: 2px; }
+.bk-edit, .bk-delete {
   background: transparent; border: none;
   color: var(--text-4); cursor: pointer;
-  padding: 4px; border-radius: 6px; font-size: 13px; line-height: 1;
-  flex-shrink: 0; margin-top: 2px;
+  padding: 4px 6px; border-radius: 6px; font-size: 13px; line-height: 1;
   -webkit-tap-highlight-color: transparent;
   transition: color 0.15s;
 }
+.bk-edit:hover   { color: var(--book); }
 .bk-delete:hover { color: var(--bad); }
 .bk-add-btn {
   display: block; width: 100%; padding: 14px;
@@ -230,12 +231,25 @@ html, body {
 .bk-input::placeholder { color: var(--text-4); }
 .bk-select-wrap { position: relative; }
 .bk-select-wrap::after {
-  content: '▾'; position: absolute; right: 13px; top: 50%;
-  transform: translateY(-50%); pointer-events: none;
+  content: '▾'; position: absolute; right: 13px; top: 18px;
+  pointer-events: none;
   color: var(--text-3); font-size: 12px;
 }
 .bk-select option { background: #111113; color: #fff; }
 .bk-modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.bk-genre-custom {
+  display: none; margin-top: 8px;
+  width: 100%; padding: 11px 13px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text-1);
+  font-family: inherit; font-size: 15px; outline: none;
+  transition: border-color 0.15s;
+  -webkit-appearance: none; appearance: none;
+}
+.bk-genre-custom.show { display: block; }
+.bk-genre-custom:focus { border-color: rgba(167,139,250,0.50); }
+.bk-genre-custom::placeholder { color: var(--text-4); }
 .bk-modal-actions { display: flex; gap: 8px; margin-top: 20px; }
 .bk-modal-cancel {
   flex: 1; padding: 12px;
@@ -306,20 +320,7 @@ html, body {
     <div class="bk-filter-row">
       <div class="bk-filter-select-wrap">
         <select id="bkFilterGenre" class="bk-filter-select">
-          <option value="">All Genres</option>
-          <option value="Fiction">Fiction</option>
-          <option value="Non-Fiction">Non-Fiction</option>
-          <option value="Fantasy">Fantasy</option>
-          <option value="Science Fiction">Science Fiction</option>
-          <option value="Mystery">Mystery</option>
-          <option value="Thriller">Thriller</option>
-          <option value="Romance">Romance</option>
-          <option value="Biography">Biography</option>
-          <option value="Self-Help">Self-Help</option>
-          <option value="History">History</option>
-          <option value="Horror">Horror</option>
-          <option value="Classic">Classic</option>
-          <option value="Other">Other</option>
+          <!-- populated by JS -->
         </select>
       </div>
       <input type="text" id="bkFilterAuthor" class="bk-filter-input" placeholder="Search author…" autocomplete="off">
@@ -335,10 +336,10 @@ html, body {
 
 </div>
 
-<!-- Add Book Modal -->
+<!-- Add / Edit Book Modal -->
 <div class="bk-modal-bg" id="bkModalBg">
   <div class="bk-modal">
-    <div class="bk-modal-title">Add Book</div>
+    <div class="bk-modal-title" id="bkModalTitle">Add Book</div>
 
     <div class="bk-field">
       <label class="bk-label" for="bkTitle">BOOK NAME</label>
@@ -372,21 +373,10 @@ html, body {
       <label class="bk-label" for="bkGenre">GENRE</label>
       <div class="bk-select-wrap">
         <select id="bkGenre" class="bk-select">
-          <option value="Fiction">Fiction</option>
-          <option value="Non-Fiction">Non-Fiction</option>
-          <option value="Fantasy">Fantasy</option>
-          <option value="Science Fiction">Science Fiction</option>
-          <option value="Mystery">Mystery</option>
-          <option value="Thriller">Thriller</option>
-          <option value="Romance">Romance</option>
-          <option value="Biography">Biography</option>
-          <option value="Self-Help">Self-Help</option>
-          <option value="History">History</option>
-          <option value="Horror">Horror</option>
-          <option value="Classic">Classic</option>
-          <option value="Other">Other</option>
+          <!-- populated by JS -->
         </select>
       </div>
+      <input type="text" id="bkGenreCustom" class="bk-genre-custom" placeholder="Enter genre name…" autocomplete="off" spellcheck="false">
     </div>
 
     <div class="bk-modal-actions">
@@ -398,8 +388,11 @@ html, body {
 
 <script>
 (function () {
-  const BK_KEY = 'books_library';
+  const BK_KEY        = 'books_library';
+  const BK_GENRES_KEY = 'books_custom_genres';
   const $ = (id) => document.getElementById(id);
+
+  const PRESET_GENRES = ['Fiction','Non-Fiction','Fantasy','Science Fiction','Mystery','Thriller','Romance','Biography','Self-Help','History','Horror','Classic'];
 
   const STATUS_CLASS = {
     'To Be Read':  'tbr',
@@ -419,6 +412,7 @@ html, body {
   let bkFilterStatus = '';
   let bkFilterGenre  = '';
   let bkFilterAuthor = '';
+  let editingId      = null;
 
   function bkLoad() {
     try { return JSON.parse(localStorage.getItem(BK_KEY)) || []; } catch { return []; }
@@ -426,6 +420,39 @@ html, body {
   function bkSave(books) {
     try { localStorage.setItem(BK_KEY, JSON.stringify(books)); } catch {}
   }
+  function bkLoadCustomGenres() {
+    try { return JSON.parse(localStorage.getItem(BK_GENRES_KEY)) || []; } catch { return []; }
+  }
+  function bkSaveCustomGenre(name) {
+    const list = bkLoadCustomGenres();
+    if (!list.includes(name)) {
+      list.push(name);
+      list.sort();
+      localStorage.setItem(BK_GENRES_KEY, JSON.stringify(list));
+      bkRebuildGenreDropdowns();
+    }
+  }
+  function bkRebuildGenreDropdowns() {
+    const custom   = bkLoadCustomGenres();
+    const allGenres = [...PRESET_GENRES, ...custom];
+
+    // Modal genre select
+    const modalSel = $('bkGenre');
+    const modalVal = modalSel.value;
+    modalSel.innerHTML =
+      allGenres.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('') +
+      '<option value="Other">Other…</option>';
+    if ([...modalSel.options].some(o => o.value === modalVal)) modalSel.value = modalVal;
+
+    // Filter genre select
+    const filterSel = $('bkFilterGenre');
+    const filterVal = filterSel.value;
+    filterSel.innerHTML =
+      '<option value="">All Genres</option>' +
+      allGenres.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('');
+    if ([...filterSel.options].some(o => o.value === filterVal)) filterSel.value = filterVal;
+  }
+
   function esc(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
@@ -442,7 +469,7 @@ html, body {
   function bkRender() {
     const books = bkLoad();
 
-    // Counts
+    // Counts (always total, unfiltered)
     const c = { 'To Be Read': 0, 'In Progress': 0, 'Read': 0, 'Want to Buy': 0 };
     books.forEach(b => { if (c[b.status] != null) c[b.status]++; });
     $('bkCountTbr').textContent     = c['To Be Read'];
@@ -450,7 +477,7 @@ html, body {
     $('bkCountRead').textContent    = c['Read'];
     $('bkCountWant').textContent    = c['Want to Buy'];
 
-    // List — apply filters
+    // Apply filters
     const needle = bkFilterAuthor.toLowerCase().trim();
     const visible = books.filter(b => {
       if (bkFilterStatus && b.status !== bkFilterStatus) return false;
@@ -474,68 +501,120 @@ html, body {
     }
     list.classList.remove('hidden');
     list.innerHTML = visible.map(b => {
-      const cls = STATUS_CLASS[b.status] || 'tbr';
+      const cls  = STATUS_CLASS[b.status] || 'tbr';
       const icon = pickIcon(b.title);
       return '<div class="bk-row">' +
         '<span class="bk-icon">' + icon + '</span>' +
         '<div class="bk-info">' +
-          '<div class="bk-title">' + esc(b.title) + '</div>' +
+          '<div class="bk-title">'  + esc(b.title)        + '</div>' +
           '<div class="bk-author">' + esc(b.author || '—') + '</div>' +
           '<div class="bk-tags">' +
             '<span class="bk-badge ' + cls + '">' + esc(b.status) + '</span>' +
-            (b.genre  ? '<span class="bk-genre">' + esc(b.genre) + '</span>' : '') +
-            (b.pages  ? '<span class="bk-pages">· ' + b.pages + ' pages</span>' : '') +
+            (b.genre ? '<span class="bk-genre">' + esc(b.genre) + '</span>' : '') +
+            (b.pages ? '<span class="bk-pages">· ' + b.pages + ' pages</span>' : '') +
           '</div>' +
         '</div>' +
-        '<button class="bk-delete" data-id="' + b.id + '" aria-label="Delete">✕</button>' +
+        '<div class="bk-row-btns">' +
+          '<button class="bk-edit"   data-id="' + b.id + '" aria-label="Edit">✎</button>' +
+          '<button class="bk-delete" data-id="' + b.id + '" aria-label="Delete">✕</button>' +
+        '</div>' +
       '</div>';
     }).join('');
-
-    list.querySelectorAll('.bk-delete').forEach(btn => {
-      btn.addEventListener('click', () => {
-        bkSave(bkLoad().filter(b => b.id !== btn.dataset.id));
-        bkRender();
-      });
-    });
   }
 
-  function openModal() {
-    $('bkTitle').value  = '';
-    $('bkAuthor').value = '';
-    $('bkPages').value  = '';
-    $('bkStatus').value = 'To Be Read';
-    $('bkGenre').value  = 'Fiction';
+  // Event delegation for edit / delete
+  $('bkList').addEventListener('click', (e) => {
+    const editBtn = e.target.closest('.bk-edit');
+    const delBtn  = e.target.closest('.bk-delete');
+    if (editBtn) {
+      const book = bkLoad().find(b => b.id === editBtn.dataset.id);
+      if (book) openModal(book);
+    }
+    if (delBtn) {
+      bkSave(bkLoad().filter(b => b.id !== delBtn.dataset.id));
+      bkRender();
+    }
+  });
+
+  function openModal(book = null) {
+    editingId = book ? book.id : null;
+    $('bkModalTitle').textContent = book ? 'Edit Book' : 'Add Book';
+    $('bkTitle').value  = book ? book.title         : '';
+    $('bkAuthor').value = book ? (book.author || '') : '';
+    $('bkPages').value  = book ? (book.pages  || '') : '';
+    $('bkStatus').value = book ? book.status         : 'To Be Read';
+
+    const genre = book ? book.genre : PRESET_GENRES[0];
+    if (!book || PRESET_GENRES.includes(genre) || bkLoadCustomGenres().includes(genre)) {
+      $('bkGenre').value = genre || PRESET_GENRES[0];
+      $('bkGenreCustom').value = '';
+      $('bkGenreCustom').classList.remove('show');
+    } else {
+      // Custom genre not yet in the list (edge case: synced from another device)
+      $('bkGenre').value = 'Other';
+      $('bkGenreCustom').value = genre;
+      $('bkGenreCustom').classList.add('show');
+    }
+
     $('bkModalBg').classList.add('is-open');
     setTimeout(() => $('bkTitle').focus(), 60);
   }
   function closeModal() {
     $('bkModalBg').classList.remove('is-open');
+    editingId = null;
   }
   function saveBook() {
     const title  = $('bkTitle').value.trim();
     const author = $('bkAuthor').value.trim();
     const pages  = parseInt($('bkPages').value, 10);
     const status = $('bkStatus').value;
-    const genre  = $('bkGenre').value;
+    let genre    = $('bkGenre').value;
+
+    if (genre === 'Other') {
+      const custom = $('bkGenreCustom').value.trim();
+      genre = custom || 'Other';
+      if (custom) bkSaveCustomGenre(custom);
+    }
+
     if (!title) { $('bkTitle').focus(); return; }
     const books = bkLoad();
-    books.unshift({
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      title, author,
-      pages: isNaN(pages) || pages < 1 ? null : pages,
-      status, genre,
-      dateAdded: dateKey(),
-    });
+
+    if (editingId) {
+      const idx = books.findIndex(b => b.id === editingId);
+      if (idx !== -1) {
+        books[idx] = {
+          ...books[idx], title, author,
+          pages: isNaN(pages) || pages < 1 ? null : pages,
+          status, genre,
+        };
+      }
+    } else {
+      books.unshift({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        title, author,
+        pages: isNaN(pages) || pages < 1 ? null : pages,
+        status, genre,
+        dateAdded: dateKey(),
+      });
+    }
+
     bkSave(books);
     bkRender();
     closeModal();
   }
 
-  $('bkAddBtn').addEventListener('click', openModal);
+  // Show / hide custom genre input
+  $('bkGenre').addEventListener('change', () => {
+    const isOther = $('bkGenre').value === 'Other';
+    $('bkGenreCustom').classList.toggle('show', isOther);
+    if (isOther) setTimeout(() => $('bkGenreCustom').focus(), 60);
+  });
+
+  $('bkAddBtn').addEventListener('click', () => openModal());
   $('bkModalCancel').addEventListener('click', closeModal);
   $('bkModalSave').addEventListener('click', saveBook);
   $('bkModalBg').addEventListener('click', (e) => { if (e.target === $('bkModalBg')) closeModal(); });
-  [$('bkTitle'), $('bkAuthor'), $('bkPages')].forEach(inp => {
+  [$('bkTitle'), $('bkAuthor'), $('bkPages'), $('bkGenreCustom')].forEach(inp => {
     inp.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') saveBook();
       if (e.key === 'Escape') closeModal();
@@ -554,13 +633,11 @@ html, body {
     bkRender();
   });
 
-  // Genre filter
   $('bkFilterGenre').addEventListener('change', () => {
     bkFilterGenre = $('bkFilterGenre').value;
     bkRender();
   });
 
-  // Author search
   let bkAuthorTimer;
   $('bkFilterAuthor').addEventListener('input', () => {
     clearTimeout(bkAuthorTimer);
@@ -570,6 +647,21 @@ html, body {
     }, 200);
   });
 
+  // Bootstrap: migrate any custom genres already stored in book data
+  (function () {
+    const books = bkLoad();
+    const saved = bkLoadCustomGenres();
+    let changed = false;
+    books.forEach(b => {
+      if (b.genre && !PRESET_GENRES.includes(b.genre) && b.genre !== 'Other' && !saved.includes(b.genre)) {
+        saved.push(b.genre);
+        changed = true;
+      }
+    });
+    if (changed) { saved.sort(); localStorage.setItem(BK_GENRES_KEY, JSON.stringify(saved)); }
+  })();
+
+  bkRebuildGenreDropdowns();
   bkRender();
 })();
 </script>
