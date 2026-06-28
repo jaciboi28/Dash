@@ -427,6 +427,121 @@ img, video, canvas, svg { max-width: 100%; }
   .wt-compare-meta-line { font-size: 11px; }
 }
 
+/* Personal Bests */
+.pb-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(251,191,36,0.10);
+  border-radius: 18px;
+  overflow: hidden;
+  margin-bottom: 22px;
+}
+.pb-empty {
+  text-align: center; padding: 28px 16px;
+  color: var(--text-3); font-size: 13px;
+}
+.pb-list { padding: 4px 0 0; }
+.pb-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.pb-row:last-child { border-bottom: none; }
+.pb-row-info { flex: 1; min-width: 0; }
+.pb-exercise {
+  font-size: 14px; font-weight: 600; color: var(--text-1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+.pb-lift {
+  font-size: 12px; color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.pb-orm {
+  font-size: 13px; font-weight: 600; color: var(--warn);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap; flex-shrink: 0;
+}
+.pb-delete {
+  background: transparent; border: none;
+  color: var(--text-4); cursor: pointer;
+  padding: 6px 4px; border-radius: 6px; font-size: 13px; line-height: 1;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s;
+}
+.pb-delete:hover { color: var(--bad); }
+.pb-add-btn {
+  display: block; width: 100%; padding: 14px;
+  background: transparent; border: none;
+  border-top: 1px solid var(--border);
+  color: var(--text-3);
+  font-family: inherit; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.14s, color 0.14s;
+}
+.pb-add-btn:hover { background: rgba(255,255,255,0.03); color: var(--text-2); }
+
+/* PB Modal */
+.pb-modal-bg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.72); backdrop-filter: blur(10px);
+  z-index: 150; align-items: center; justify-content: center; padding: 24px;
+}
+.pb-modal-bg.is-open { display: flex; }
+.pb-modal {
+  width: 100%; max-width: 360px;
+  background: #111113;
+  border: 1px solid var(--border-strong);
+  border-radius: 18px; padding: 24px;
+}
+.pb-modal-title {
+  font-size: 18px; font-weight: 700; color: var(--text-1); margin-bottom: 20px;
+}
+.pb-field { margin-bottom: 14px; }
+.pb-label {
+  display: block; font-size: 10px; letter-spacing: 0.18em;
+  font-weight: 600; color: var(--text-3); margin-bottom: 6px;
+}
+.pb-input {
+  width: 100%; padding: 11px 13px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text-1);
+  font-family: inherit; font-size: 15px; outline: none;
+  transition: border-color 0.15s;
+}
+.pb-input:focus { border-color: rgba(251,191,36,0.45); }
+.pb-input::placeholder { color: var(--text-4); }
+.pb-modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pb-modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+.pb-modal-cancel {
+  flex: 1; padding: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border); border-radius: 10px;
+  color: var(--text-1); font-family: inherit;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.14s;
+}
+.pb-modal-cancel:hover { background: rgba(255,255,255,0.08); }
+.pb-modal-save {
+  flex: 1; padding: 12px;
+  background: rgba(251,191,36,0.14);
+  border: 1px solid rgba(251,191,36,0.35); border-radius: 10px;
+  color: var(--warn); font-family: inherit;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.14s;
+}
+.pb-modal-save:hover { background: rgba(251,191,36,0.24); }
+
+@media (max-width: 480px) {
+  .pb-modal-bg { padding: 12px; align-items: flex-end; }
+  .pb-modal { border-radius: 18px 18px 12px 12px; }
+}
+
 .hidden { display: none !important; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -508,6 +623,39 @@ img, video, canvas, svg { max-width: 100%; }
       </div>
       <span class="wt-progress-arrow">→</span>
     </button>
+  </div>
+
+  <!-- PERSONAL BESTS -->
+  <div class="wt-divider"><span>PERSONAL BESTS</span></div>
+  <div class="pb-card" id="pbCard">
+    <div class="pb-empty" id="pbEmpty">No personal bests yet — tap Add to log one</div>
+    <div class="pb-list hidden" id="pbList"></div>
+    <button class="pb-add-btn" id="pbAddBtn" type="button">+ Add personal best</button>
+  </div>
+
+  <!-- PB Modal -->
+  <div class="pb-modal-bg" id="pbModalBg">
+    <div class="pb-modal">
+      <div class="pb-modal-title">New Personal Best</div>
+      <div class="pb-field">
+        <label class="pb-label" for="pbExercise">EXERCISE</label>
+        <input type="text" id="pbExercise" class="pb-input" placeholder="e.g. Bench Press" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="pb-modal-row">
+        <div class="pb-field">
+          <label class="pb-label" for="pbWeight">WEIGHT (kg)</label>
+          <input type="number" id="pbWeight" class="pb-input" placeholder="100" inputmode="decimal" step="0.5" min="0">
+        </div>
+        <div class="pb-field">
+          <label class="pb-label" for="pbReps">REPS</label>
+          <input type="number" id="pbReps" class="pb-input" placeholder="5" inputmode="numeric" min="1" max="36">
+        </div>
+      </div>
+      <div class="pb-modal-actions">
+        <button class="pb-modal-cancel" id="pbModalCancel" type="button">Cancel</button>
+        <button class="pb-modal-save" id="pbModalSave" type="button">Save</button>
+      </div>
+    </div>
   </div>
 
   <!-- Progress photos overlay -->
@@ -1113,10 +1261,101 @@ img, video, canvas, svg { max-width: 100%; }
   $('wtCmpSideB').addEventListener('click', cycleCompareTarget);
 
   // ============================================================
+  // PERSONAL BESTS
+  // ============================================================
+  const PB_KEY = 'fitness_pb_records';
+
+  function pbLoad() {
+    try { return JSON.parse(localStorage.getItem(PB_KEY)) || []; } catch { return []; }
+  }
+  function pbSave(records) {
+    try { localStorage.setItem(PB_KEY, JSON.stringify(records)); } catch {}
+  }
+  function brzyckiOrm(weight, reps) {
+    if (reps < 2 || reps >= 37) return null;
+    return weight * (36 / (37 - reps));
+  }
+  function pbEscHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function pbRender() {
+    const records = pbLoad();
+    const list = $('pbList');
+    if (!records.length) {
+      $('pbEmpty').classList.remove('hidden');
+      list.classList.add('hidden');
+      list.innerHTML = '';
+      return;
+    }
+    $('pbEmpty').classList.add('hidden');
+    list.classList.remove('hidden');
+    list.innerHTML = records.map(r => {
+      const orm = brzyckiOrm(r.weight, r.reps);
+      const ormHtml = orm != null
+        ? '<div class="pb-orm">~' + orm.toFixed(1) + ' kg 1RM</div>'
+        : '';
+      return '<div class="pb-row">' +
+        '<div class="pb-row-info">' +
+          '<div class="pb-exercise">' + pbEscHtml(r.exercise) + '</div>' +
+          '<div class="pb-lift">' + r.weight + ' kg &times; ' + r.reps + ' rep' + (r.reps !== 1 ? 's' : '') + '</div>' +
+        '</div>' +
+        ormHtml +
+        '<button class="pb-delete" data-id="' + r.id + '" aria-label="Delete">✕</button>' +
+      '</div>';
+    }).join('');
+    list.querySelectorAll('.pb-delete').forEach(btn => {
+      btn.addEventListener('click', () => {
+        pbSave(pbLoad().filter(r => r.id !== btn.dataset.id));
+        pbRender();
+      });
+    });
+  }
+
+  function pbOpenModal() {
+    $('pbExercise').value = '';
+    $('pbWeight').value = '';
+    $('pbReps').value = '';
+    $('pbModalBg').classList.add('is-open');
+    setTimeout(() => $('pbExercise').focus(), 60);
+  }
+  function pbCloseModal() {
+    $('pbModalBg').classList.remove('is-open');
+  }
+  function pbSaveRecord() {
+    const exercise = $('pbExercise').value.trim();
+    const weight = parseFloat($('pbWeight').value);
+    const reps = parseInt($('pbReps').value, 10);
+    if (!exercise)                  { $('pbExercise').focus(); return; }
+    if (isNaN(weight) || weight <= 0) { $('pbWeight').focus();  return; }
+    if (isNaN(reps) || reps < 1)    { $('pbReps').focus();    return; }
+    const records = pbLoad();
+    records.unshift({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      exercise, weight, reps,
+      date: wtDateKey(new Date())
+    });
+    pbSave(records);
+    pbRender();
+    pbCloseModal();
+  }
+
+  $('pbAddBtn').addEventListener('click', pbOpenModal);
+  $('pbModalCancel').addEventListener('click', pbCloseModal);
+  $('pbModalSave').addEventListener('click', pbSaveRecord);
+  $('pbModalBg').addEventListener('click', (e) => { if (e.target === $('pbModalBg')) pbCloseModal(); });
+  [$('pbExercise'), $('pbWeight'), $('pbReps')].forEach(inp => {
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') pbSaveRecord();
+      if (e.key === 'Escape') pbCloseModal();
+    });
+  });
+
+  // ============================================================
   // BOOT
   // ============================================================
   wtRender();
   photosRender();
+  pbRender();
 
   // ============================================================
   // CLOUD SYNC via Supabase
@@ -1124,7 +1363,7 @@ img, video, canvas, svg { max-width: 100%; }
   const SUPABASE_URL = 'PASTE-YOUR-SUPABASE-PROJECT-URL-HERE';
   const SUPABASE_KEY = 'PASTE-YOUR-SUPABASE-PUBLISHABLE-KEY-HERE';
   const APP_KEY = 'po-coach';
-  const PC_SYNCED_KEYS = ['po_coach_weights', 'po_coach_photos'];
+  const PC_SYNCED_KEYS = ['po_coach_weights', 'po_coach_photos', 'fitness_pb_records'];
 
   let pcSupa = null;
   let pcPushTimer = null;
