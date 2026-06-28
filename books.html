@@ -143,6 +143,58 @@ html, body {
 }
 .bk-add-btn:hover { background: rgba(255,255,255,0.03); color: var(--text-2); }
 
+/* Filters */
+.bk-filters { margin-bottom: 10px; }
+.bk-filter-status {
+  display: flex; gap: 6px; overflow-x: auto;
+  padding-bottom: 2px; margin-bottom: 8px;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.bk-filter-status::-webkit-scrollbar { display: none; }
+.bk-filter-pill {
+  flex-shrink: 0;
+  padding: 6px 14px; border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-3); font-family: inherit;
+  font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.bk-filter-pill:hover { border-color: var(--border-strong); color: var(--text-2); }
+.bk-filter-pill.active-all     { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.22); color: var(--text-1); }
+.bk-filter-pill.active-tbr     { background: rgba(251,191,36,0.12);  border-color: rgba(251,191,36,0.40);  color: var(--warn); }
+.bk-filter-pill.active-reading { background: rgba(96,165,250,0.12);  border-color: rgba(96,165,250,0.40);  color: #60a5fa; }
+.bk-filter-pill.active-read    { background: rgba(110,231,183,0.12); border-color: rgba(110,231,183,0.40); color: var(--good); }
+.bk-filter-pill.active-want    { background: rgba(167,139,250,0.12); border-color: rgba(167,139,250,0.40); color: var(--book); }
+.bk-filter-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.bk-filter-select, .bk-filter-input {
+  width: 100%; padding: 9px 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text-1);
+  font-family: inherit; font-size: 13px; outline: none;
+  transition: border-color 0.15s;
+  -webkit-appearance: none; appearance: none;
+}
+.bk-filter-select { padding-right: 28px; }
+.bk-filter-select:focus, .bk-filter-input:focus { border-color: rgba(167,139,250,0.45); }
+.bk-filter-input::placeholder { color: var(--text-4); }
+.bk-filter-select option { background: #111113; color: #fff; }
+.bk-filter-select-wrap { position: relative; }
+.bk-filter-select-wrap::after {
+  content: '▾'; position: absolute; right: 10px; top: 50%;
+  transform: translateY(-50%); pointer-events: none;
+  color: var(--text-3); font-size: 11px;
+}
+.bk-no-results {
+  text-align: center; padding: 24px 16px;
+  color: var(--text-4); font-size: 13px;
+}
+
 /* Modal */
 .bk-modal-bg {
   display: none; position: fixed; inset: 0;
@@ -242,6 +294,38 @@ html, body {
     </div>
   </div>
 
+  <!-- Filters -->
+  <div class="bk-filters">
+    <div class="bk-filter-status" id="bkFilterStatus">
+      <button class="bk-filter-pill active-all" data-status="">All</button>
+      <button class="bk-filter-pill" data-status="To Be Read">To Read</button>
+      <button class="bk-filter-pill" data-status="In Progress">Reading</button>
+      <button class="bk-filter-pill" data-status="Read">Read</button>
+      <button class="bk-filter-pill" data-status="Want to Buy">Want</button>
+    </div>
+    <div class="bk-filter-row">
+      <div class="bk-filter-select-wrap">
+        <select id="bkFilterGenre" class="bk-filter-select">
+          <option value="">All Genres</option>
+          <option value="Fiction">Fiction</option>
+          <option value="Non-Fiction">Non-Fiction</option>
+          <option value="Fantasy">Fantasy</option>
+          <option value="Science Fiction">Science Fiction</option>
+          <option value="Mystery">Mystery</option>
+          <option value="Thriller">Thriller</option>
+          <option value="Romance">Romance</option>
+          <option value="Biography">Biography</option>
+          <option value="Self-Help">Self-Help</option>
+          <option value="History">History</option>
+          <option value="Horror">Horror</option>
+          <option value="Classic">Classic</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <input type="text" id="bkFilterAuthor" class="bk-filter-input" placeholder="Search author…" autocomplete="off">
+    </div>
+  </div>
+
   <!-- Book list -->
   <div class="bk-card">
     <div class="bk-empty" id="bkEmpty">No books yet — tap Add Book to start your library</div>
@@ -323,7 +407,18 @@ html, body {
     'Read':        'read',
     'Want to Buy': 'want',
   };
+  const PILL_ACTIVE = {
+    '':            'active-all',
+    'To Be Read':  'active-tbr',
+    'In Progress': 'active-reading',
+    'Read':        'active-read',
+    'Want to Buy': 'active-want',
+  };
   const ICONS = ['📖','📚','📕','📗','📘','📙'];
+
+  let bkFilterStatus = '';
+  let bkFilterGenre  = '';
+  let bkFilterAuthor = '';
 
   function bkLoad() {
     try { return JSON.parse(localStorage.getItem(BK_KEY)) || []; } catch { return []; }
@@ -355,7 +450,15 @@ html, body {
     $('bkCountRead').textContent    = c['Read'];
     $('bkCountWant').textContent    = c['Want to Buy'];
 
-    // List
+    // List — apply filters
+    const needle = bkFilterAuthor.toLowerCase().trim();
+    const visible = books.filter(b => {
+      if (bkFilterStatus && b.status !== bkFilterStatus) return false;
+      if (bkFilterGenre  && b.genre  !== bkFilterGenre)  return false;
+      if (needle && !(b.author || '').toLowerCase().includes(needle)) return false;
+      return true;
+    });
+
     const list = $('bkList');
     if (!books.length) {
       $('bkEmpty').classList.remove('hidden');
@@ -364,8 +467,13 @@ html, body {
       return;
     }
     $('bkEmpty').classList.add('hidden');
+    if (!visible.length) {
+      list.classList.remove('hidden');
+      list.innerHTML = '<div class="bk-no-results">No books match this filter</div>';
+      return;
+    }
     list.classList.remove('hidden');
-    list.innerHTML = books.map(b => {
+    list.innerHTML = visible.map(b => {
       const cls = STATUS_CLASS[b.status] || 'tbr';
       const icon = pickIcon(b.title);
       return '<div class="bk-row">' +
@@ -432,6 +540,34 @@ html, body {
       if (e.key === 'Enter') saveBook();
       if (e.key === 'Escape') closeModal();
     });
+  });
+
+  // Status pill filters
+  $('bkFilterStatus').addEventListener('click', (e) => {
+    const pill = e.target.closest('[data-status]');
+    if (!pill) return;
+    bkFilterStatus = pill.dataset.status;
+    $('bkFilterStatus').querySelectorAll('.bk-filter-pill').forEach(p => {
+      p.className = 'bk-filter-pill';
+      if (p.dataset.status === bkFilterStatus) p.classList.add(PILL_ACTIVE[bkFilterStatus]);
+    });
+    bkRender();
+  });
+
+  // Genre filter
+  $('bkFilterGenre').addEventListener('change', () => {
+    bkFilterGenre = $('bkFilterGenre').value;
+    bkRender();
+  });
+
+  // Author search
+  let bkAuthorTimer;
+  $('bkFilterAuthor').addEventListener('input', () => {
+    clearTimeout(bkAuthorTimer);
+    bkAuthorTimer = setTimeout(() => {
+      bkFilterAuthor = $('bkFilterAuthor').value;
+      bkRender();
+    }, 200);
   });
 
   bkRender();
