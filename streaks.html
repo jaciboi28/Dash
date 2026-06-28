@@ -151,14 +151,30 @@ main {
   color: #ffb347;
 }
 .streak-btn.plus:hover { background: rgba(255,140,30,0.15); }
-.streak-btn.edit { font-size: 14px; color: var(--text-tertiary); }
-.streak-btn.delete {
-  font-size: 14px;
-  border-color: rgba(255,80,80,0.3);
-  background: rgba(255,60,60,0.06);
-  color: rgba(255,110,110,0.75);
+.streak-btn.more { font-size: 16px; letter-spacing: 2px; color: var(--text-tertiary); }
+
+.streak-menu {
+  position: fixed;
+  background: #18181c;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 4px;
+  z-index: 200;
+  min-width: 148px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.55);
 }
-.streak-btn.delete:hover { background: rgba(255,60,60,0.15); }
+.streak-menu-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px; font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.streak-menu-item:hover { background: rgba(255,255,255,0.06); }
+.streak-menu-item.menu-delete { color: rgba(255,100,100,0.85); }
+.streak-menu-item.menu-delete:hover { background: rgba(255,60,60,0.1); }
 
 /* ── Add button ── */
 .streaks-add-btn {
@@ -305,11 +321,9 @@ main {
           <span class="streak-count-flame">🔥</span>
         </div>
         <div class="streak-btns">
-          <button class="streak-btn minus"  data-id="${item.id}" data-action="dec"    aria-label="Decrease">−</button>
-          <button class="streak-btn plus"   data-id="${item.id}" data-action="inc"    aria-label="Increase">+</button>
-          <button class="streak-btn reset"  data-id="${item.id}" data-action="reset"  aria-label="Reset">↺</button>
-          <button class="streak-btn edit"   data-id="${item.id}" data-action="edit"   aria-label="Edit">✎</button>
-          <button class="streak-btn delete" data-id="${item.id}" data-action="delete" aria-label="Delete">✕</button>
+          <button class="streak-btn minus" data-id="${item.id}" data-action="dec"  aria-label="Decrease">−</button>
+          <button class="streak-btn plus"  data-id="${item.id}" data-action="inc"  aria-label="Increase">+</button>
+          <button class="streak-btn more"  data-id="${item.id}" data-action="more" aria-label="More">···</button>
         </div>`;
       list.appendChild(row);
     });
@@ -334,11 +348,52 @@ main {
     if (!btn) return;
     const id = btn.dataset.id;
     const action = btn.dataset.action;
-    if (action === 'inc')    mutate(id, item => { item.count++; });
-    if (action === 'dec')    mutate(id, item => { item.count = Math.max(0, item.count - 1); });
-    if (action === 'reset')  mutate(id, item => { item.count = 0; });
-    if (action === 'edit')   openEditModal(id);
-    if (action === 'delete') deleteStreak(id);
+    if (action === 'inc')  mutate(id, s => { s.count++; });
+    if (action === 'dec')  mutate(id, s => { s.count = Math.max(0, s.count - 1); });
+    if (action === 'more') { e.stopPropagation(); toggleMoreMenu(id, btn); }
+  });
+
+  // ── More menu ──
+  let menuOpenId = null;
+  let menuEl = null;
+
+  function toggleMoreMenu(id, anchorBtn) {
+    if (menuEl) { closeMoreMenu(); if (menuOpenId === id) return; }
+    menuOpenId = id;
+    menuEl = document.createElement('div');
+    menuEl.className = 'streak-menu';
+    menuEl.innerHTML = `
+      <div class="streak-menu-item" data-menu-action="edit">✎&nbsp;&nbsp;Edit name</div>
+      <div class="streak-menu-item" data-menu-action="reset">↺&nbsp;&nbsp;Reset count</div>
+      <div class="streak-menu-item menu-delete" data-menu-action="delete">✕&nbsp;&nbsp;Delete</div>
+    `;
+    document.body.appendChild(menuEl);
+
+    const rect = anchorBtn.getBoundingClientRect();
+    const top = rect.bottom + 6;
+    const right = window.innerWidth - rect.right;
+    menuEl.style.top  = (top + menuEl.offsetHeight > window.innerHeight ? rect.top - menuEl.offsetHeight - 6 : top) + 'px';
+    menuEl.style.right = right + 'px';
+
+    menuEl.addEventListener('click', (e) => {
+      const item = e.target.closest('[data-menu-action]');
+      if (!item) return;
+      const action = item.dataset.menuAction;
+      const targetId = menuOpenId;
+      closeMoreMenu();
+      if (action === 'edit')   openEditModal(targetId);
+      if (action === 'reset')  mutate(targetId, s => { s.count = 0; });
+      if (action === 'delete') deleteStreak(targetId);
+    });
+  }
+
+  function closeMoreMenu() {
+    if (menuEl) { menuEl.remove(); menuEl = null; }
+    menuOpenId = null;
+  }
+
+  document.addEventListener('click', (e) => {
+    if (menuEl && !menuEl.contains(e.target)) closeMoreMenu();
   });
 
   // ── Edit modal ──
