@@ -57,7 +57,7 @@ html, body {
 /* Stats */
 .bk-stats {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .bk-stat {
   background: var(--bg-card);
@@ -78,6 +78,70 @@ html, body {
 .bk-stat.reading .bk-stat-num { color: #60a5fa; }
 .bk-stat.read    .bk-stat-num { color: var(--good); }
 .bk-stat.want    .bk-stat-num { color: var(--book); }
+
+/* Annual reading goal */
+.bk-goal-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(167,139,250,0.12);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+.bk-goal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.bk-goal-label {
+  font-size: 10px; letter-spacing: 0.18em; font-weight: 600;
+  color: var(--text-3);
+}
+.bk-goal-edit-btn {
+  background: transparent; border: none;
+  color: var(--text-3); cursor: pointer;
+  font-size: 14px; padding: 2px 6px;
+  border-radius: 6px; -webkit-tap-highlight-color: transparent;
+  transition: color 0.14s;
+}
+.bk-goal-edit-btn:hover { color: var(--book); }
+.bk-goal-main {
+  display: flex; align-items: baseline; gap: 6px;
+  margin-bottom: 10px;
+}
+.bk-goal-count {
+  font-size: 28px; font-weight: 700; color: var(--text-1);
+  font-variant-numeric: tabular-nums; line-height: 1;
+}
+.bk-goal-of { font-size: 13px; color: var(--text-3); }
+.bk-goal-bar-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.bk-goal-bar {
+  flex: 1; height: 5px; border-radius: 3px;
+  background: rgba(167,139,250,0.12); overflow: hidden;
+}
+.bk-goal-fill {
+  height: 100%; border-radius: 3px;
+  background: var(--book); transition: width 0.4s;
+}
+.bk-goal-pct {
+  font-size: 11px; color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  min-width: 32px; text-align: right;
+}
+.bk-goal-set-row {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.bk-goal-set-text { font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.bk-goal-set-btn {
+  background: rgba(167,139,250,0.10);
+  border: 1px solid rgba(167,139,250,0.25);
+  border-radius: 8px; color: var(--book);
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  padding: 6px 12px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.14s;
+}
+.bk-goal-set-btn:hover { background: rgba(167,139,250,0.18); }
 
 /* Book list */
 .bk-card {
@@ -121,6 +185,22 @@ html, body {
 .bk-badge.want    { background: rgba(167,139,250,0.14); color: var(--book); }
 .bk-genre  { font-size: 11px; color: var(--text-4); }
 .bk-pages  { font-size: 11px; color: var(--text-4); font-variant-numeric: tabular-nums; }
+.bk-row-stars { font-size: 11px; color: var(--warn); letter-spacing: -0.5px; white-space: nowrap; }
+
+/* Reading progress bar */
+.bk-progress-wrap { margin-top: 7px; }
+.bk-progress-bar {
+  height: 3px; border-radius: 2px;
+  background: rgba(96,165,250,0.14); overflow: hidden;
+  margin-bottom: 3px;
+}
+.bk-progress-fill { height: 100%; border-radius: 2px; background: #60a5fa; }
+.bk-progress-text {
+  font-size: 10px; color: var(--text-4);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Row buttons */
 .bk-row-btns { display: flex; gap: 2px; flex-shrink: 0; margin-top: 2px; }
 .bk-edit, .bk-delete {
   background: transparent; border: none;
@@ -169,9 +249,7 @@ html, body {
 .bk-filter-pill.active-reading { background: rgba(96,165,250,0.12);  border-color: rgba(96,165,250,0.40);  color: #60a5fa; }
 .bk-filter-pill.active-read    { background: rgba(110,231,183,0.12); border-color: rgba(110,231,183,0.40); color: var(--good); }
 .bk-filter-pill.active-want    { background: rgba(167,139,250,0.12); border-color: rgba(167,139,250,0.40); color: var(--book); }
-.bk-filter-row {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-}
+.bk-filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .bk-filter-select, .bk-filter-input {
   width: 100%; padding: 9px 12px;
   background: rgba(255,255,255,0.04);
@@ -232,8 +310,7 @@ html, body {
 .bk-select-wrap { position: relative; }
 .bk-select-wrap::after {
   content: '▾'; position: absolute; right: 13px; top: 18px;
-  pointer-events: none;
-  color: var(--text-3); font-size: 12px;
+  pointer-events: none; color: var(--text-3); font-size: 12px;
 }
 .bk-select option { background: #111113; color: #fff; }
 .bk-modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -250,6 +327,19 @@ html, body {
 .bk-genre-custom.show { display: block; }
 .bk-genre-custom:focus { border-color: rgba(167,139,250,0.50); }
 .bk-genre-custom::placeholder { color: var(--text-4); }
+
+/* Star rating in modal */
+.bk-stars { display: flex; gap: 0; }
+.bk-star {
+  background: none; border: none;
+  font-size: 26px; cursor: pointer; padding: 3px 4px;
+  color: var(--text-4); line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.1s, transform 0.1s;
+}
+.bk-star:active { transform: scale(0.88); }
+.bk-star.lit { color: var(--warn); }
+
 .bk-modal-actions { display: flex; gap: 8px; margin-top: 20px; }
 .bk-modal-cancel {
   flex: 1; padding: 12px;
@@ -307,6 +397,9 @@ html, body {
       <div class="bk-stat-label">Want</div>
     </div>
   </div>
+
+  <!-- Annual reading goal -->
+  <div class="bk-goal-card" id="bkGoalCard"></div>
 
   <!-- Filters -->
   <div class="bk-filters">
@@ -369,6 +462,12 @@ html, body {
       </div>
     </div>
 
+    <!-- Current page — shown only when In Progress -->
+    <div class="bk-field" id="bkCurrentPageField" style="display:none">
+      <label class="bk-label" for="bkCurrentPage">CURRENT PAGE</label>
+      <input type="number" id="bkCurrentPage" class="bk-input" placeholder="e.g. 142" inputmode="numeric" min="1">
+    </div>
+
     <div class="bk-field">
       <label class="bk-label" for="bkGenre">GENRE</label>
       <div class="bk-select-wrap">
@@ -377,6 +476,17 @@ html, body {
         </select>
       </div>
       <input type="text" id="bkGenreCustom" class="bk-genre-custom" placeholder="Enter genre name…" autocomplete="off" spellcheck="false">
+    </div>
+
+    <div class="bk-field">
+      <label class="bk-label">RATING</label>
+      <div class="bk-stars" id="bkStars">
+        <button type="button" class="bk-star" data-star="1">☆</button>
+        <button type="button" class="bk-star" data-star="2">☆</button>
+        <button type="button" class="bk-star" data-star="3">☆</button>
+        <button type="button" class="bk-star" data-star="4">☆</button>
+        <button type="button" class="bk-star" data-star="5">☆</button>
+      </div>
     </div>
 
     <div class="bk-modal-actions">
@@ -390,6 +500,8 @@ html, body {
 (function () {
   const BK_KEY        = 'books_library';
   const BK_GENRES_KEY = 'books_custom_genres';
+  const BK_GOAL_KEY   = 'books_reading_goal';
+  const THIS_YEAR     = new Date().getFullYear();
   const $ = (id) => document.getElementById(id);
 
   const PRESET_GENRES = ['Fiction','Non-Fiction','Fantasy','Science Fiction','Mystery','Thriller','Romance','Biography','Self-Help','History','Horror','Classic'];
@@ -413,7 +525,9 @@ html, body {
   let bkFilterGenre  = '';
   let bkFilterAuthor = '';
   let editingId      = null;
+  let bkStarRating   = 0;
 
+  // ── Storage helpers ──────────────────────────────────────────
   function bkLoad() {
     try { return JSON.parse(localStorage.getItem(BK_KEY)) || []; } catch { return []; }
   }
@@ -432,27 +546,14 @@ html, body {
       bkRebuildGenreDropdowns();
     }
   }
-  function bkRebuildGenreDropdowns() {
-    const custom   = bkLoadCustomGenres();
-    const allGenres = [...PRESET_GENRES, ...custom];
-
-    // Modal genre select
-    const modalSel = $('bkGenre');
-    const modalVal = modalSel.value;
-    modalSel.innerHTML =
-      allGenres.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('') +
-      '<option value="Other">Other…</option>';
-    if ([...modalSel.options].some(o => o.value === modalVal)) modalSel.value = modalVal;
-
-    // Filter genre select
-    const filterSel = $('bkFilterGenre');
-    const filterVal = filterSel.value;
-    filterSel.innerHTML =
-      '<option value="">All Genres</option>' +
-      allGenres.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('');
-    if ([...filterSel.options].some(o => o.value === filterVal)) filterSel.value = filterVal;
+  function bkLoadGoal() {
+    try { return JSON.parse(localStorage.getItem(BK_GOAL_KEY)) || null; } catch { return null; }
+  }
+  function bkSaveGoalData(g) {
+    localStorage.setItem(BK_GOAL_KEY, JSON.stringify(g));
   }
 
+  // ── Utilities ─────────────────────────────────────────────────
   function esc(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
@@ -466,6 +567,101 @@ html, body {
     return ICONS[h % ICONS.length];
   }
 
+  // ── Genre dropdowns ───────────────────────────────────────────
+  function bkRebuildGenreDropdowns() {
+    const custom    = bkLoadCustomGenres();
+    const allGenres = [...PRESET_GENRES, ...custom];
+
+    const modalSel = $('bkGenre');
+    const modalVal = modalSel.value;
+    modalSel.innerHTML =
+      allGenres.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('') +
+      '<option value="Other">Other…</option>';
+    if ([...modalSel.options].some(o => o.value === modalVal)) modalSel.value = modalVal;
+
+    const filterSel = $('bkFilterGenre');
+    const filterVal = filterSel.value;
+    filterSel.innerHTML =
+      '<option value="">All Genres</option>' +
+      allGenres.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('');
+    if ([...filterSel.options].some(o => o.value === filterVal)) filterSel.value = filterVal;
+  }
+
+  // ── Annual goal ───────────────────────────────────────────────
+  function bkCountReadThisYear() {
+    const yr = String(THIS_YEAR);
+    return bkLoad().filter(b => b.status === 'Read' && b.dateCompleted && b.dateCompleted.startsWith(yr)).length;
+  }
+
+  function bkRenderGoal() {
+    const goal  = bkLoadGoal();
+    const count = bkCountReadThisYear();
+    const card  = $('bkGoalCard');
+
+    if (!goal || goal.year !== THIS_YEAR) {
+      card.innerHTML =
+        '<div class="bk-goal-set-row">' +
+          '<span class="bk-goal-set-text">' + count + ' book' + (count !== 1 ? 's' : '') + ' read in ' + THIS_YEAR + '</span>' +
+          '<button class="bk-goal-set-btn" id="bkSetGoalBtn">Set goal</button>' +
+        '</div>';
+      $('bkSetGoalBtn').addEventListener('click', bkPromptGoal);
+      return;
+    }
+
+    const pct = Math.min(100, Math.round((count / goal.target) * 100));
+    card.innerHTML =
+      '<div class="bk-goal-header">' +
+        '<span class="bk-goal-label">' + THIS_YEAR + ' READING GOAL</span>' +
+        '<button class="bk-goal-edit-btn" id="bkEditGoalBtn">✎</button>' +
+      '</div>' +
+      '<div class="bk-goal-main">' +
+        '<span class="bk-goal-count">' + count + '</span>' +
+        '<span class="bk-goal-of">of ' + goal.target + ' books</span>' +
+      '</div>' +
+      '<div class="bk-goal-bar-row">' +
+        '<div class="bk-goal-bar"><div class="bk-goal-fill" style="width:' + pct + '%"></div></div>' +
+        '<span class="bk-goal-pct">' + pct + '%</span>' +
+      '</div>';
+    $('bkEditGoalBtn').addEventListener('click', bkPromptGoal);
+  }
+
+  function bkPromptGoal() {
+    const current = bkLoadGoal();
+    const val = prompt('Set your ' + THIS_YEAR + ' reading goal (number of books):', current && current.year === THIS_YEAR ? current.target : 24);
+    if (val === null) return;
+    const n = parseInt(val, 10);
+    if (isNaN(n) || n < 1) return;
+    bkSaveGoalData({ year: THIS_YEAR, target: n });
+    bkRenderGoal();
+  }
+
+  // ── Star rating ───────────────────────────────────────────────
+  function bkSetStars(val) {
+    bkStarRating = val;
+    $('bkStars').querySelectorAll('.bk-star').forEach((s, i) => {
+      s.textContent = i < val ? '★' : '☆';
+      s.classList.toggle('lit', i < val);
+    });
+  }
+
+  $('bkStars').addEventListener('mouseover', (e) => {
+    const star = e.target.closest('.bk-star');
+    if (!star) return;
+    const hv = parseInt(star.dataset.star, 10);
+    $('bkStars').querySelectorAll('.bk-star').forEach((s, i) => {
+      s.textContent = i < hv ? '★' : '☆';
+      s.classList.toggle('lit', i < hv);
+    });
+  });
+  $('bkStars').addEventListener('mouseleave', () => bkSetStars(bkStarRating));
+  $('bkStars').addEventListener('click', (e) => {
+    const star = e.target.closest('.bk-star');
+    if (!star) return;
+    const val = parseInt(star.dataset.star, 10);
+    bkSetStars(bkStarRating === val ? 0 : val);
+  });
+
+  // ── Render ────────────────────────────────────────────────────
   function bkRender() {
     const books = bkLoad();
 
@@ -476,6 +672,8 @@ html, body {
     $('bkCountReading').textContent = c['In Progress'];
     $('bkCountRead').textContent    = c['Read'];
     $('bkCountWant').textContent    = c['Want to Buy'];
+
+    bkRenderGoal();
 
     // Apply filters
     const needle = bkFilterAuthor.toLowerCase().trim();
@@ -503,16 +701,39 @@ html, body {
     list.innerHTML = visible.map(b => {
       const cls  = STATUS_CLASS[b.status] || 'tbr';
       const icon = pickIcon(b.title);
+
+      // Reading progress bar
+      let progressHtml = '';
+      if (b.status === 'In Progress' && b.currentPage) {
+        if (b.pages) {
+          const pct = Math.min(100, Math.round((b.currentPage / b.pages) * 100));
+          progressHtml =
+            '<div class="bk-progress-wrap">' +
+              '<div class="bk-progress-bar"><div class="bk-progress-fill" style="width:' + pct + '%"></div></div>' +
+              '<div class="bk-progress-text">Page ' + b.currentPage + ' of ' + b.pages + ' · ' + pct + '%</div>' +
+            '</div>';
+        } else {
+          progressHtml = '<div class="bk-progress-wrap"><div class="bk-progress-text">Page ' + b.currentPage + '</div></div>';
+        }
+      }
+
+      // Star display
+      const starsHtml = b.rating
+        ? '<span class="bk-row-stars">' + '★'.repeat(b.rating) + '☆'.repeat(5 - b.rating) + '</span>'
+        : '';
+
       return '<div class="bk-row">' +
         '<span class="bk-icon">' + icon + '</span>' +
         '<div class="bk-info">' +
-          '<div class="bk-title">'  + esc(b.title)        + '</div>' +
-          '<div class="bk-author">' + esc(b.author || '—') + '</div>' +
+          '<div class="bk-title">'  + esc(b.title)         + '</div>' +
+          '<div class="bk-author">' + esc(b.author || '—')  + '</div>' +
           '<div class="bk-tags">' +
             '<span class="bk-badge ' + cls + '">' + esc(b.status) + '</span>' +
-            (b.genre ? '<span class="bk-genre">' + esc(b.genre) + '</span>' : '') +
-            (b.pages ? '<span class="bk-pages">· ' + b.pages + ' pages</span>' : '') +
+            (b.genre  ? '<span class="bk-genre">' + esc(b.genre) + '</span>' : '') +
+            (b.pages  ? '<span class="bk-pages">· ' + b.pages + ' pages</span>' : '') +
+            starsHtml +
           '</div>' +
+          progressHtml +
         '</div>' +
         '<div class="bk-row-btns">' +
           '<button class="bk-edit"   data-id="' + b.id + '" aria-label="Edit">✎</button>' +
@@ -536,38 +757,52 @@ html, body {
     }
   });
 
+  // ── Modal ─────────────────────────────────────────────────────
+  function syncCurrentPageVisibility() {
+    $('bkCurrentPageField').style.display = $('bkStatus').value === 'In Progress' ? '' : 'none';
+  }
+
   function openModal(book = null) {
     editingId = book ? book.id : null;
     $('bkModalTitle').textContent = book ? 'Edit Book' : 'Add Book';
-    $('bkTitle').value  = book ? book.title         : '';
-    $('bkAuthor').value = book ? (book.author || '') : '';
-    $('bkPages').value  = book ? (book.pages  || '') : '';
-    $('bkStatus').value = book ? book.status         : 'To Be Read';
+    $('bkTitle').value       = book ? book.title         : '';
+    $('bkAuthor').value      = book ? (book.author || '') : '';
+    $('bkPages').value       = book ? (book.pages  || '') : '';
+    $('bkCurrentPage').value = book ? (book.currentPage || '') : '';
+    $('bkStatus').value      = book ? book.status : 'To Be Read';
+    syncCurrentPageVisibility();
 
+    // Genre
     const genre = book ? book.genre : PRESET_GENRES[0];
-    if (!book || PRESET_GENRES.includes(genre) || bkLoadCustomGenres().includes(genre)) {
+    const allKnown = [...PRESET_GENRES, ...bkLoadCustomGenres()];
+    if (!book || allKnown.includes(genre)) {
       $('bkGenre').value = genre || PRESET_GENRES[0];
       $('bkGenreCustom').value = '';
       $('bkGenreCustom').classList.remove('show');
     } else {
-      // Custom genre not yet in the list (edge case: synced from another device)
       $('bkGenre').value = 'Other';
       $('bkGenreCustom').value = genre;
       $('bkGenreCustom').classList.add('show');
     }
 
+    // Stars
+    bkSetStars(book ? (book.rating || 0) : 0);
+
     $('bkModalBg').classList.add('is-open');
     setTimeout(() => $('bkTitle').focus(), 60);
   }
+
   function closeModal() {
     $('bkModalBg').classList.remove('is-open');
     editingId = null;
   }
+
   function saveBook() {
     const title  = $('bkTitle').value.trim();
     const author = $('bkAuthor').value.trim();
     const pages  = parseInt($('bkPages').value, 10);
     const status = $('bkStatus').value;
+    const currentPage = parseInt($('bkCurrentPage').value, 10) || null;
     let genre    = $('bkGenre').value;
 
     if (genre === 'Other') {
@@ -582,10 +817,17 @@ html, body {
     if (editingId) {
       const idx = books.findIndex(b => b.id === editingId);
       if (idx !== -1) {
+        const wasRead = books[idx].status === 'Read';
+        const nowRead = status === 'Read';
+        const dateCompleted = nowRead
+          ? (wasRead ? books[idx].dateCompleted : dateKey())
+          : (books[idx].dateCompleted || null);
         books[idx] = {
           ...books[idx], title, author,
           pages: isNaN(pages) || pages < 1 ? null : pages,
-          status, genre,
+          currentPage, status, genre,
+          rating: bkStarRating || null,
+          dateCompleted,
         };
       }
     } else {
@@ -593,7 +835,10 @@ html, body {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         title, author,
         pages: isNaN(pages) || pages < 1 ? null : pages,
+        currentPage,
         status, genre,
+        rating: bkStarRating || null,
+        dateCompleted: status === 'Read' ? dateKey() : null,
         dateAdded: dateKey(),
       });
     }
@@ -603,7 +848,10 @@ html, body {
     closeModal();
   }
 
-  // Show / hide custom genre input
+  // Status change → show/hide current page field
+  $('bkStatus').addEventListener('change', syncCurrentPageVisibility);
+
+  // Genre change → show/hide custom input
   $('bkGenre').addEventListener('change', () => {
     const isOther = $('bkGenre').value === 'Other';
     $('bkGenreCustom').classList.toggle('show', isOther);
@@ -614,14 +862,14 @@ html, body {
   $('bkModalCancel').addEventListener('click', closeModal);
   $('bkModalSave').addEventListener('click', saveBook);
   $('bkModalBg').addEventListener('click', (e) => { if (e.target === $('bkModalBg')) closeModal(); });
-  [$('bkTitle'), $('bkAuthor'), $('bkPages'), $('bkGenreCustom')].forEach(inp => {
+  [$('bkTitle'), $('bkAuthor'), $('bkPages'), $('bkCurrentPage'), $('bkGenreCustom')].forEach(inp => {
     inp.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') saveBook();
       if (e.key === 'Escape') closeModal();
     });
   });
 
-  // Status pill filters
+  // ── Filters ───────────────────────────────────────────────────
   $('bkFilterStatus').addEventListener('click', (e) => {
     const pill = e.target.closest('[data-status]');
     if (!pill) return;
@@ -647,11 +895,13 @@ html, body {
     }, 200);
   });
 
-  // Bootstrap: migrate any custom genres already stored in book data
+  // ── Bootstrap migrations ──────────────────────────────────────
   (function () {
     const books = bkLoad();
-    const saved = bkLoadCustomGenres();
     let changed = false;
+
+    // Migrate custom genres from book data
+    const saved = bkLoadCustomGenres();
     books.forEach(b => {
       if (b.genre && !PRESET_GENRES.includes(b.genre) && b.genre !== 'Other' && !saved.includes(b.genre)) {
         saved.push(b.genre);
@@ -659,6 +909,16 @@ html, body {
       }
     });
     if (changed) { saved.sort(); localStorage.setItem(BK_GENRES_KEY, JSON.stringify(saved)); }
+
+    // Set dateCompleted for existing Read books that pre-date this feature
+    let booksChanged = false;
+    books.forEach(b => {
+      if (b.status === 'Read' && !b.dateCompleted) {
+        b.dateCompleted = b.dateAdded || dateKey();
+        booksChanged = true;
+      }
+    });
+    if (booksChanged) bkSave(books);
   })();
 
   bkRebuildGenreDropdowns();

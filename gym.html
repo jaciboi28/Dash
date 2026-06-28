@@ -542,6 +542,54 @@ img, video, canvas, svg { max-width: 100%; }
   .pb-modal { border-radius: 18px 18px 12px 12px; }
 }
 
+/* Workout Frequency */
+.wf-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(255,140,30,0.10);
+  border-radius: 18px;
+  padding: 20px 20px 18px;
+  margin-bottom: 22px;
+}
+.wf-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.wf-stats {
+  font-size: 12px; color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.wf-train-btn {
+  padding: 7px 14px; border-radius: 10px;
+  border: 1px solid rgba(255,140,30,0.30);
+  background: rgba(255,140,30,0.08);
+  color: #ffb347;
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: background 0.14s;
+}
+.wf-train-btn:hover { background: rgba(255,140,30,0.15); }
+.wf-train-btn.trained {
+  border-color: rgba(110,231,183,0.30);
+  background: rgba(110,231,183,0.08);
+  color: var(--good);
+}
+.wf-train-btn.trained:hover { background: rgba(110,231,183,0.14); }
+.wf-grid {
+  display: grid;
+  grid-template-rows: repeat(7, 11px);
+  grid-auto-flow: column;
+  grid-auto-columns: 11px;
+  gap: 3px;
+}
+.wf-cell {
+  width: 11px; height: 11px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.06);
+}
+.wf-cell.wf-trained { background: rgba(255,140,30,0.62); }
+.wf-cell.wf-today   { box-shadow: 0 0 0 1.5px rgba(255,255,255,0.45); }
+.wf-cell.wf-future  { opacity: 0.2; }
+
 .hidden { display: none !important; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -623,6 +671,16 @@ img, video, canvas, svg { max-width: 100%; }
       </div>
       <span class="wt-progress-arrow">→</span>
     </button>
+  </div>
+
+  <!-- WORKOUT FREQUENCY -->
+  <div class="wt-divider"><span>WORKOUT FREQUENCY</span></div>
+  <div class="wf-card">
+    <div class="wf-header">
+      <span class="wf-stats" id="wfStats">— this week · — this month</span>
+      <button class="wf-train-btn" id="wfTrainBtn" type="button">+ Trained today</button>
+    </div>
+    <div class="wf-grid" id="wfGrid"></div>
   </div>
 
   <!-- PERSONAL BESTS -->
@@ -1261,6 +1319,67 @@ img, video, canvas, svg { max-width: 100%; }
   $('wtCmpSideB').addEventListener('click', cycleCompareTarget);
 
   // ============================================================
+  // WORKOUT FREQUENCY
+  // ============================================================
+  const WF_KEY = 'fitness_workout_log';
+
+  function wfLoad() {
+    try { return JSON.parse(localStorage.getItem(WF_KEY)) || []; } catch { return []; }
+  }
+  function wfSave(log) {
+    try { localStorage.setItem(WF_KEY, JSON.stringify(log)); } catch {}
+  }
+  function wfRender() {
+    const log = wfLoad();
+    const logSet = new Set(log);
+    const today = new Date();
+    const todayKey = wtDateKey(today);
+    const trainedToday = logSet.has(todayKey);
+
+    const btn = $('wfTrainBtn');
+    btn.textContent = trainedToday ? '✓ Trained today' : '+ Trained today';
+    btn.classList.toggle('trained', trainedToday);
+
+    const weekAgo  = new Date(today); weekAgo.setDate(weekAgo.getDate() - 6);
+    const monthAgo = new Date(today); monthAgo.setDate(monthAgo.getDate() - 29);
+    const thisWeek  = log.filter(d => d >= wtDateKey(weekAgo)).length;
+    const thisMonth = log.filter(d => d >= wtDateKey(monthAgo)).length;
+    $('wfStats').textContent = thisWeek + ' this week · ' + thisMonth + ' this month';
+
+    // Heatmap: 14 weeks × 7 days, columns flow Mon→Sun left→right
+    const WEEKS = 14;
+    const start = new Date(today);
+    const dow = (today.getDay() + 6) % 7; // 0=Mon … 6=Sun
+    start.setDate(today.getDate() - dow - (WEEKS - 1) * 7);
+
+    let html = '';
+    const d = new Date(start);
+    for (let i = 0; i < WEEKS * 7; i++) {
+      const key = wtDateKey(d);
+      const isFuture = key > todayKey;
+      const trained  = !isFuture && logSet.has(key);
+      const isToday  = key === todayKey;
+      let cls = 'wf-cell';
+      if (trained)  cls += ' wf-trained';
+      if (isToday)  cls += ' wf-today';
+      if (isFuture) cls += ' wf-future';
+      html += '<div class="' + cls + '" title="' + key + '"></div>';
+      d.setDate(d.getDate() + 1);
+    }
+    $('wfGrid').innerHTML = html;
+  }
+
+  $('wfTrainBtn').addEventListener('click', () => {
+    const log = wfLoad();
+    const todayKey = wtDateKey(new Date());
+    const idx = log.indexOf(todayKey);
+    if (idx === -1) log.push(todayKey);
+    else log.splice(idx, 1);
+    wfSave(log);
+    wfRender();
+  });
+
+  // ============================================================
   // PERSONAL BESTS
   // ============================================================
   const PB_KEY = 'fitness_pb_records';
@@ -1356,6 +1475,7 @@ img, video, canvas, svg { max-width: 100%; }
   wtRender();
   photosRender();
   pbRender();
+  wfRender();
 
   // ============================================================
   // CLOUD SYNC via Supabase
@@ -1363,7 +1483,7 @@ img, video, canvas, svg { max-width: 100%; }
   const SUPABASE_URL = 'PASTE-YOUR-SUPABASE-PROJECT-URL-HERE';
   const SUPABASE_KEY = 'PASTE-YOUR-SUPABASE-PUBLISHABLE-KEY-HERE';
   const APP_KEY = 'po-coach';
-  const PC_SYNCED_KEYS = ['po_coach_weights', 'po_coach_photos', 'fitness_pb_records'];
+  const PC_SYNCED_KEYS = ['po_coach_weights', 'po_coach_photos', 'fitness_pb_records', 'fitness_workout_log'];
 
   let pcSupa = null;
   let pcPushTimer = null;
@@ -1418,6 +1538,7 @@ img, video, canvas, svg { max-width: 100%; }
     } catch { photos = []; }
     try { wtRender(); } catch {}
     try { photosRender(); } catch {}
+    try { wfRender(); } catch {}
   }
 
   function pcApplyRemoteState(remote) {
