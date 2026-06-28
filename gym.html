@@ -675,16 +675,18 @@ img, video, canvas, svg { max-width: 100%; }
       if (last && !$('wtInput').value) $('wtInput').value = last.weight.toFixed(1);
     }
 
-    if (wtEntries.length >= 2) {
+    if (wtEntries.length >= 1) {
       $('wtRangeTabs').classList.remove('hidden');
       $('wtChartWrap').classList.remove('hidden');
-      $('wtLegend').classList.remove('hidden');
       wtRenderChart();
-      wtRenderDelta();
     } else {
       $('wtRangeTabs').classList.add('hidden');
       $('wtChartWrap').classList.add('hidden');
       $('wtLegend').classList.add('hidden');
+    }
+    if (wtEntries.length >= 2) {
+      wtRenderDelta();
+    } else {
       $('wtDelta').classList.add('hidden');
     }
     wtRenderStreak();
@@ -714,11 +716,22 @@ img, video, canvas, svg { max-width: 100%; }
     const rangeLabel = wtRange === 'W' ? '7 days' : wtRange === 'M' ? '30 days' : '1 year';
     const avgWindow = wtRange === 'W' ? 3 : wtRange === 'M' ? 7 : 30;
 
-    if (recent.length < 2) {
-      $('wtChartContent').innerHTML = '<text x="160" y="65" text-anchor="middle" fill="rgba(255,255,255,0.2)" font-size="11" font-family="monospace">No data for this period</text>';
+    if (recent.length === 0) {
+      $('wtChartContent').innerHTML = '<text x="160" y="65" text-anchor="middle" fill="rgba(255,255,255,0.18)" font-size="11" font-family="monospace">No entries in this period</text>';
       $('wtYAxisMax').textContent = '—';
       $('wtYAxisMin').textContent = '—';
       $('wtMeta').textContent = '0 entries · ' + rangeLabel;
+      $('wtLegend').classList.add('hidden');
+      return;
+    }
+    if (recent.length < 2) {
+      const w = recent[0].weight;
+      const cx = 160, cy = 65;
+      $('wtChartContent').innerHTML = '<circle class="wt-dot-today" cx="' + cx + '" cy="' + cy + '" r="5"/>'
+        + '<text x="' + cx + '" y="' + (cy - 14) + '" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-size="11" font-family="monospace">' + w.toFixed(1) + ' kg</text>';
+      $('wtYAxisMax').textContent = w.toFixed(1);
+      $('wtYAxisMin').textContent = w.toFixed(1);
+      $('wtMeta').textContent = '1 entry · ' + rangeLabel;
       $('wtLegend').classList.add('hidden');
       return;
     }
