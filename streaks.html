@@ -151,6 +151,14 @@ main {
   color: #ffb347;
 }
 .streak-btn.plus:hover { background: rgba(255,140,30,0.15); }
+.streak-btn.edit { font-size: 14px; color: var(--text-tertiary); }
+.streak-btn.delete {
+  font-size: 14px;
+  border-color: rgba(255,80,80,0.3);
+  background: rgba(255,60,60,0.06);
+  color: rgba(255,110,110,0.75);
+}
+.streak-btn.delete:hover { background: rgba(255,60,60,0.15); }
 
 /* ── Add button ── */
 .streaks-add-btn {
@@ -240,6 +248,18 @@ main {
   </div>
 </main>
 
+<!-- Edit Streak Modal -->
+<div class="modal-bg" id="editModalBg">
+  <div class="modal">
+    <h3>Edit streak</h3>
+    <input type="text" id="editNameInput" class="modal-input" placeholder="Streak name" maxlength="40" autocomplete="off" spellcheck="false" />
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-cancel" id="editCancelBtn">Cancel</button>
+      <button class="modal-btn modal-btn-confirm" id="editConfirmBtn">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- Add Streak Modal -->
 <div class="modal-bg" id="streakModalBg">
   <div class="modal">
@@ -285,9 +305,11 @@ main {
           <span class="streak-count-flame">🔥</span>
         </div>
         <div class="streak-btns">
-          <button class="streak-btn minus" data-id="${item.id}" data-action="dec" aria-label="Decrease">−</button>
-          <button class="streak-btn plus"  data-id="${item.id}" data-action="inc" aria-label="Increase">+</button>
-          <button class="streak-btn reset" data-id="${item.id}" data-action="reset" aria-label="Reset">↺</button>
+          <button class="streak-btn minus"  data-id="${item.id}" data-action="dec"    aria-label="Decrease">−</button>
+          <button class="streak-btn plus"   data-id="${item.id}" data-action="inc"    aria-label="Increase">+</button>
+          <button class="streak-btn reset"  data-id="${item.id}" data-action="reset"  aria-label="Reset">↺</button>
+          <button class="streak-btn edit"   data-id="${item.id}" data-action="edit"   aria-label="Edit">✎</button>
+          <button class="streak-btn delete" data-id="${item.id}" data-action="delete" aria-label="Delete">✕</button>
         </div>`;
       list.appendChild(row);
     });
@@ -312,12 +334,58 @@ main {
     if (!btn) return;
     const id = btn.dataset.id;
     const action = btn.dataset.action;
-    if (action === 'inc')   mutate(id, item => { item.count++; });
-    if (action === 'dec')   mutate(id, item => { item.count = Math.max(0, item.count - 1); });
-    if (action === 'reset') mutate(id, item => { item.count = 0; });
+    if (action === 'inc')    mutate(id, item => { item.count++; });
+    if (action === 'dec')    mutate(id, item => { item.count = Math.max(0, item.count - 1); });
+    if (action === 'reset')  mutate(id, item => { item.count = 0; });
+    if (action === 'edit')   openEditModal(id);
+    if (action === 'delete') deleteStreak(id);
   });
 
-  // ── Modal ──
+  // ── Edit modal ──
+  let editingId = null;
+  const editModalBg    = document.getElementById('editModalBg');
+  const editNameInput  = document.getElementById('editNameInput');
+  const editCancelBtn  = document.getElementById('editCancelBtn');
+  const editConfirmBtn = document.getElementById('editConfirmBtn');
+
+  function openEditModal(id) {
+    const items = load();
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    editingId = id;
+    editNameInput.value = item.name;
+    editModalBg.classList.add('show');
+    document.body.classList.add('topbar-modal-open');
+    setTimeout(() => editNameInput.focus(), 60);
+  }
+  function closeEditModal() {
+    editModalBg.classList.remove('show');
+    document.body.classList.remove('topbar-modal-open');
+    editingId = null;
+  }
+  function saveEdit() {
+    const name = editNameInput.value.trim();
+    if (!name || !editingId) { editNameInput.focus(); return; }
+    const items = load();
+    const idx = items.findIndex(i => i.id === editingId);
+    if (idx !== -1) { items[idx].name = name; save(items); }
+    render();
+    closeEditModal();
+  }
+
+  editCancelBtn.addEventListener('click', closeEditModal);
+  editConfirmBtn.addEventListener('click', saveEdit);
+  editNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') closeEditModal(); });
+  editModalBg.addEventListener('click', (e) => { if (e.target === editModalBg) closeEditModal(); });
+
+  // ── Delete ──
+  function deleteStreak(id) {
+    const items = load().filter(i => i.id !== id);
+    save(items);
+    render();
+  }
+
+  // ── Add modal ──
   const modalBg     = document.getElementById('streakModalBg');
   const nameInput   = document.getElementById('streakNameInput');
   const cancelBtn   = document.getElementById('streakCancelBtn');
