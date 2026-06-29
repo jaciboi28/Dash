@@ -364,6 +364,254 @@ body::after {
   width: 100%;
 }
 
+/* wx daily bar: sunrise / sunset / UV */
+.wx-daily-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.wx-daily-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.wx-daily-icon { font-size: 14px; line-height: 1; }
+.wx-daily-label {
+  font-size: 9px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 700;
+  margin-right: 1px;
+}
+.wx-uv-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+.wx-uv-low   { background: rgba(107,227,164,0.14); color: #6BE3A4; }
+.wx-uv-mod   { background: rgba(242,192,99,0.14);  color: #F2C063; }
+.wx-uv-high  { background: rgba(255,140,80,0.14);  color: #FF8C50; }
+.wx-uv-vhigh { background: rgba(255,107,107,0.14); color: #FF6B6B; }
+.wx-uv-ext   { background: rgba(180,107,255,0.16); color: #C07AFF; }
+
+/* ===== Two-column mini widget row ===== */
+.mini-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+@media (max-width: 600px) { .mini-row { grid-template-columns: 1fr; } }
+.mini-card { margin-bottom: 0 !important; }
+
+/* ===== Moon & Tides card ===== */
+.moon-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 12px;
+}
+.moon-emoji { font-size: 38px; line-height: 1; flex-shrink: 0; }
+.moon-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+.moon-illum {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  margin-top: 3px;
+}
+.tide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 10px;
+}
+.tide-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+.tide-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.tide-badge-high { color: #7DD3FC; }
+.tide-badge-low  { color: var(--text-tertiary); }
+.tide-time {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.tide-height {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-left: 4px;
+}
+.tide-status-msg {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-style: italic;
+  text-align: center;
+  padding: 4px 0;
+}
+.tide-key-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  align-items: center;
+}
+.tide-key-input {
+  flex: 1;
+  padding: 7px 10px;
+  background: rgba(0,0,0,0.30);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 9px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  outline: none;
+  min-width: 0;
+}
+.tide-key-input::placeholder { color: var(--text-tertiary); }
+.tide-key-input:focus { border-color: rgba(255,255,255,0.28); }
+
+/* ===== On This Day card ===== */
+.otd-eyebrow {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  margin-bottom: 10px;
+}
+.otd-year {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  margin-bottom: 8px;
+  letter-spacing: -0.03em;
+}
+.otd-text {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+.otd-hint {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* ===== Age counter card ===== */
+.age-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.age-eyebrow {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  margin-bottom: 4px;
+}
+.age-number {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.age-number-dim { color: var(--text-tertiary); }
+.age-settings-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 6px;
+  line-height: 1;
+  align-self: flex-start;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s, background 0.15s;
+}
+.age-settings-btn:hover { color: var(--text-secondary); background: rgba(255,255,255,0.06); }
+.age-dob-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  align-items: center;
+  width: 100%;
+}
+.age-dob-input {
+  flex: 1;
+  padding: 8px 11px;
+  background: rgba(0,0,0,0.30);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 9px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  outline: none;
+  min-width: 0;
+  color-scheme: dark;
+}
+.age-dob-input:focus { border-color: rgba(255,255,255,0.28); }
+.age-dob-save {
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 9px;
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.age-dob-save:hover { background: rgba(255,255,255,0.14); }
+
 /* ===== Component 4: section + To Do List ===== */
 .section { margin-top: 8px; }
 .section-title {
@@ -761,6 +1009,62 @@ body::after {
       <div class="wx-strip" id="wxStrip">
         <div class="wx-status">Set a location above to see the forecast</div>
       </div>
+      <div class="wx-daily-row" id="wxDaily" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- Mini widget row: Moon & Tides | On This Day -->
+  <div class="mini-row">
+
+    <!-- Moon & Tides -->
+    <div class="gm-card mini-card" id="moonTideCard">
+      <div class="wx-header" style="margin-bottom:12px">
+        <span class="wx-loc-label">Moon &amp; Tides</span>
+        <button class="wx-settings-btn" id="tideSettingsBtn" title="Set WorldTides API key">⚙</button>
+      </div>
+      <div id="tideKeySettingsRow" style="display:none;margin-bottom:10px;">
+        <div style="font-size:10px;color:var(--text-tertiary);font-family:var(--font-mono);margin-bottom:6px;">
+          Free key at <span style="color:var(--text-secondary)">worldtides.info</span> → API
+        </div>
+        <div class="tide-key-row">
+          <input type="text" class="tide-key-input" id="tideKeyInput" placeholder="Paste API key" autocomplete="off">
+          <button class="wx-loc-save" id="tideKeySave">Set</button>
+        </div>
+      </div>
+      <div class="moon-row">
+        <div class="moon-emoji" id="moonEmoji">🌑</div>
+        <div>
+          <div class="moon-name" id="moonName">—</div>
+          <div class="moon-illum" id="moonIllum">—</div>
+        </div>
+      </div>
+      <div class="tide-list" id="tideList">
+        <div class="tide-status-msg" id="tideMsg">Add API key above for tide times</div>
+      </div>
+    </div>
+
+    <!-- On This Day -->
+    <div class="gm-card mini-card">
+      <div class="otd-eyebrow">On This Day</div>
+      <div id="otdContent">
+        <div class="tide-status-msg">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Age Counter -->
+  <div class="gm-card" id="ageCard" style="margin-bottom:14px;padding:16px 20px;">
+    <div class="age-wrap">
+      <div>
+        <div class="age-eyebrow">My Age</div>
+        <div class="age-number" id="ageDisplay"><span style="color:var(--text-tertiary)">Set date of birth →</span></div>
+      </div>
+      <button class="age-settings-btn" id="ageSettingsBtn" title="Set date of birth">⚙</button>
+    </div>
+    <div class="age-dob-row" id="ageDobRow" style="display:none">
+      <input type="date" class="age-dob-input" id="ageDobInput">
+      <button class="age-dob-save" id="ageDobSave">Set</button>
     </div>
   </div>
 
@@ -1533,6 +1837,7 @@ body::after {
     const url = 'https://api.open-meteo.com/v1/forecast'
       + '?latitude=' + lat + '&longitude=' + lon
       + '&hourly=temperature_2m,precipitation_probability,weathercode,windspeed_10m,winddirection_10m'
+      + '&daily=sunrise,sunset,uv_index_max'
       + '&wind_speed_unit=mph&forecast_days=2&timezone=auto';
     const res = await fetch(url);
     return res.json();
@@ -1575,8 +1880,36 @@ body::after {
       );
     }
     strip.innerHTML = slots.join('');
-    // Auto-scroll so "Now" is visible (it's first, so nothing needed, but scroll to start)
     strip.scrollLeft = 0;
+
+    // Daily: sunrise / sunset / UV
+    const daily = document.getElementById('wxDaily');
+    if (daily && data.daily) {
+      const rise = data.daily.sunrise && data.daily.sunrise[0];
+      const set  = data.daily.sunset  && data.daily.sunset[0];
+      const uv   = data.daily.uv_index_max && data.daily.uv_index_max[0];
+
+      function fmtTime(iso) {
+        if (!iso) return '—';
+        const t = iso.split('T')[1] || iso;
+        return t.substring(0, 5);
+      }
+
+      let uvClass = 'wx-uv-low', uvLabel = 'Low';
+      if (uv >= 11) { uvClass = 'wx-uv-ext';   uvLabel = 'Extreme'; }
+      else if (uv >= 8)  { uvClass = 'wx-uv-vhigh'; uvLabel = 'Very High'; }
+      else if (uv >= 6)  { uvClass = 'wx-uv-high';  uvLabel = 'High'; }
+      else if (uv >= 3)  { uvClass = 'wx-uv-mod';   uvLabel = 'Moderate'; }
+
+      daily.innerHTML =
+        '<div class="wx-daily-item"><span class="wx-daily-icon">🌅</span>'
+        + '<span class="wx-daily-label">Rise</span>' + fmtTime(rise) + '</div>'
+        + '<div class="wx-daily-item"><span class="wx-daily-icon">🌇</span>'
+        + '<span class="wx-daily-label">Set</span>' + fmtTime(set) + '</div>'
+        + (uv != null ? '<div class="wx-daily-item"><span class="wx-daily-label">UV</span>'
+        + '<span class="wx-uv-pill ' + uvClass + '">' + Math.round(uv) + ' · ' + uvLabel + '</span></div>' : '');
+      daily.style.display = '';
+    }
   }
 
   async function loadWeather() {
@@ -1644,6 +1977,239 @@ body::after {
   setInterval(loadWeather, 30 * 60 * 1000);
 })();
 </script>
+<!-- ============================================================
+     MOON PHASE (pure JS, no API)
+     ============================================================ -->
+<script>
+(function () {
+  const synodic = 29.530588853;
+  const knownNew = new Date(Date.UTC(2000, 0, 6, 18, 14)); // Jan 6 2000 new moon
+
+  const diff = (new Date() - knownNew) / 86400000;
+  const phase = ((diff % synodic) + synodic) % synodic;
+  const illum = Math.round((1 - Math.cos(2 * Math.PI * phase / synodic)) / 2 * 100);
+
+  let emoji, name;
+  if      (phase < 1.85)  { emoji = '🌑'; name = 'New Moon'; }
+  else if (phase < 7.38)  { emoji = '🌒'; name = 'Waxing Crescent'; }
+  else if (phase < 9.22)  { emoji = '🌓'; name = 'First Quarter'; }
+  else if (phase < 14.77) { emoji = '🌔'; name = 'Waxing Gibbous'; }
+  else if (phase < 16.61) { emoji = '🌕'; name = 'Full Moon'; }
+  else if (phase < 22.15) { emoji = '🌖'; name = 'Waning Gibbous'; }
+  else if (phase < 23.99) { emoji = '🌗'; name = 'Last Quarter'; }
+  else                    { emoji = '🌘'; name = 'Waning Crescent'; }
+
+  const eEl = document.getElementById('moonEmoji');
+  const nEl = document.getElementById('moonName');
+  const iEl = document.getElementById('moonIllum');
+  if (eEl) eEl.textContent = emoji;
+  if (nEl) nEl.textContent  = name;
+  if (iEl) iEl.textContent  = illum + '% illuminated';
+})();
+</script>
+
+<!-- ============================================================
+     TIDE TIMES (WorldTides API — free key from worldtides.info)
+     ============================================================ -->
+<script>
+(function () {
+  const TIDE_KEY = 'tide_api_key';
+
+  function tideKeyLoad() { return localStorage.getItem(TIDE_KEY) || ''; }
+  function tideKeySave(k) { localStorage.setItem(TIDE_KEY, k); }
+
+  const settingsBtn = document.getElementById('tideSettingsBtn');
+  const settingsRow = document.getElementById('tideKeySettingsRow');
+  const keyInput    = document.getElementById('tideKeyInput');
+  const saveBtn     = document.getElementById('tideKeySave');
+  const tideList    = document.getElementById('tideList');
+  const tideMsg     = document.getElementById('tideMsg');
+
+  function showTideMsg(msg) {
+    if (tideList) tideList.innerHTML = '<div class="tide-status-msg">' + msg + '</div>';
+  }
+
+  if (settingsBtn) {
+    settingsBtn.addEventListener('click', function () {
+      const isHidden = settingsRow.style.display === 'none';
+      settingsRow.style.display = isHidden ? '' : 'none';
+      if (isHidden) {
+        keyInput.value = tideKeyLoad();
+        setTimeout(() => keyInput.focus(), 40);
+      }
+    });
+  }
+
+  async function loadAndRenderTides(apiKey) {
+    const locRaw = localStorage.getItem('weather_loc');
+    if (!locRaw) { showTideMsg('Set weather location first'); return; }
+    const loc = JSON.parse(locRaw);
+    showTideMsg('Loading tides…');
+    try {
+      const now   = Math.floor(Date.now() / 1000);
+      const url   = 'https://www.worldtides.info/api/v3?extremes'
+        + '&lat=' + loc.lat + '&lon=' + loc.lon
+        + '&key=' + encodeURIComponent(apiKey)
+        + '&start=' + now + '&length=86400';
+      const res   = await fetch(url);
+      const data  = await res.json();
+      if (data.error) throw new Error(data.error);
+      const today = new Date();
+      const extr  = (data.extremes || []).filter(e => {
+        const d = new Date(e.dt * 1000);
+        return d.getDate() === today.getDate() && d.getMonth() === today.getMonth();
+      });
+      if (!extr.length) { showTideMsg('No tides today at this location'); return; }
+      if (tideList) {
+        tideList.innerHTML = extr.map(e => {
+          const t    = new Date(e.dt * 1000);
+          const time = t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+          const hi   = e.type === 'High';
+          const hStr = e.height != null ? ' <span class="tide-height">(' + e.height.toFixed(1) + 'm)</span>' : '';
+          return '<div class="tide-item">'
+            + '<span class="tide-badge ' + (hi ? 'tide-badge-high' : 'tide-badge-low') + '">'
+            + (hi ? '▲ High' : '▼ Low') + '</span>'
+            + '<span class="tide-time">' + time + hStr + '</span>'
+            + '</div>';
+        }).join('');
+      }
+    } catch (e) {
+      showTideMsg('Failed — check API key');
+    }
+  }
+
+  if (saveBtn) {
+    saveBtn.addEventListener('click', async function () {
+      const val = (keyInput.value || '').trim();
+      if (!val) return;
+      tideKeySave(val);
+      settingsRow.style.display = 'none';
+      await loadAndRenderTides(val);
+    });
+  }
+  if (keyInput) {
+    keyInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') saveBtn && saveBtn.click();
+      if (e.key === 'Escape') { settingsRow.style.display = 'none'; }
+    });
+  }
+
+  const savedKey = tideKeyLoad();
+  if (savedKey) {
+    if (tideMsg) tideMsg.textContent = '';
+    loadAndRenderTides(savedKey);
+  }
+})();
+</script>
+
+<!-- ============================================================
+     ON THIS DAY (Wikipedia REST API)
+     ============================================================ -->
+<script>
+(function () {
+  const el = document.getElementById('otdContent');
+  if (!el) return;
+
+  async function loadOTD() {
+    const now = new Date();
+    const mm  = String(now.getMonth() + 1).padStart(2, '0');
+    const dd  = String(now.getDate()).padStart(2, '0');
+    try {
+      const res  = await fetch('https://en.wikipedia.org/api/rest_v1/feed/onthisday/events/' + mm + '/' + dd);
+      const data = await res.json();
+      const evts = (data.events || []).filter(e => e.text && e.text.length > 60 && e.text.length < 320);
+      if (!evts.length) { el.innerHTML = '<div class="tide-status-msg">Nothing found for today</div>'; return; }
+
+      // Sort by year descending, pick from top-10 using day-of-year as stable index
+      evts.sort((a, b) => b.year - a.year);
+      const pool  = evts.slice(0, 10);
+      const dayN  = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+      const picked = pool[dayN % pool.length];
+
+      el.innerHTML =
+        '<div class="otd-year">' + picked.year + '</div>'
+        + '<div class="otd-text">' + picked.text + '</div>'
+        + '<div class="otd-hint">' + mm + '/' + dd + ' · Wikipedia</div>';
+    } catch (e) {
+      el.innerHTML = '<div class="tide-status-msg">Could not load</div>';
+    }
+  }
+
+  loadOTD();
+})();
+</script>
+
+<!-- ============================================================
+     AGE COUNTER (real-time, 5 decimal places)
+     ============================================================ -->
+<script>
+(function () {
+  const DOB_KEY  = 'age_dob';
+  const display  = document.getElementById('ageDisplay');
+  const settBtn  = document.getElementById('ageSettingsBtn');
+  const dobRow   = document.getElementById('ageDobRow');
+  const dobInput = document.getElementById('ageDobInput');
+  const dobSave  = document.getElementById('ageDobSave');
+
+  let dob = null;
+  let raf = null;
+
+  function loadDob() {
+    const s = localStorage.getItem(DOB_KEY);
+    if (s) { dob = new Date(s); }
+  }
+
+  function tick() {
+    if (!dob || !display) return;
+    const ms      = Date.now() - dob.getTime();
+    const years   = ms / (365.25 * 24 * 60 * 60 * 1000);
+    const whole   = Math.floor(years);
+    const decimal = (years - whole).toFixed(5).substring(1); // ".XXXXX"
+    display.innerHTML =
+      '<span>' + whole + '</span>'
+      + '<span class="age-number-dim">' + decimal + '</span>';
+    raf = requestAnimationFrame(tick);
+  }
+
+  function startTicking() {
+    if (raf) cancelAnimationFrame(raf);
+    tick();
+  }
+
+  if (settBtn) {
+    settBtn.addEventListener('click', function () {
+      const isHidden = dobRow.style.display === 'none';
+      dobRow.style.display = isHidden ? '' : 'none';
+      if (isHidden) {
+        const saved = localStorage.getItem(DOB_KEY);
+        if (saved) dobInput.value = saved;
+        setTimeout(() => dobInput.focus(), 40);
+      }
+    });
+  }
+
+  if (dobSave) {
+    dobSave.addEventListener('click', function () {
+      const val = dobInput.value;
+      if (!val) return;
+      localStorage.setItem(DOB_KEY, val);
+      dob = new Date(val);
+      dobRow.style.display = 'none';
+      startTicking();
+    });
+  }
+  if (dobInput) {
+    dobInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') dobSave && dobSave.click();
+      if (e.key === 'Escape') { dobRow.style.display = 'none'; }
+    });
+  }
+
+  loadDob();
+  if (dob) startTicking();
+})();
+</script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   if (typeof initCloudSync !== 'function') return;
