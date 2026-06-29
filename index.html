@@ -221,6 +221,149 @@ body::after {
   .clock-time { font-size: 38px; }
 }
 
+/* ===== Weather widget ===== */
+.wx-section {
+  width: 100%;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  padding-top: 14px;
+}
+.wx-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.wx-loc-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
+.wx-settings-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 6px;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s, background 0.15s;
+}
+.wx-settings-btn:hover { color: var(--text-secondary); background: rgba(255,255,255,0.06); }
+.wx-settings-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+.wx-loc-input {
+  flex: 1;
+  padding: 8px 11px;
+  background: rgba(0,0,0,0.30);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 9px;
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 13px;
+  outline: none;
+  min-width: 0;
+}
+.wx-loc-input::placeholder { color: var(--text-tertiary); }
+.wx-loc-input:focus { border-color: rgba(255,255,255,0.28); }
+.wx-loc-save {
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 9px;
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.wx-loc-save:hover { background: rgba(255,255,255,0.14); }
+.wx-err {
+  font-size: 11px;
+  color: rgba(255,110,110,0.85);
+  margin-bottom: 8px;
+  font-family: var(--font-mono);
+}
+.wx-strip {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  padding-bottom: 3px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  margin: 0 -4px;
+  padding: 0 4px 4px;
+}
+.wx-strip::-webkit-scrollbar { display: none; }
+.wx-slot {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 9px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 10px;
+  min-width: 54px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.wx-slot.wx-now {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.15);
+}
+.wx-hour {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
+.wx-slot.wx-now .wx-hour { color: var(--text-secondary); }
+.wx-icon { font-size: 18px; line-height: 1; }
+.wx-temp {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.wx-rain {
+  font-size: 10px;
+  color: #7DD3FC;
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+.wx-rain.wx-dry { color: var(--text-tertiary); }
+.wx-wind {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  text-align: center;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.wx-status {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-style: italic;
+  padding: 6px 0;
+  font-family: var(--font-mono);
+  text-align: center;
+  width: 100%;
+}
+
 /* ===== Component 4: section + To Do List ===== */
 .section { margin-top: 8px; }
 .section-title {
@@ -604,6 +747,21 @@ body::after {
       <div class="clock-time" id="clockTime">00:00:00</div>
     </div>
     <div class="clock-tz" id="clockTz">GMT</div>
+
+    <div class="wx-section">
+      <div class="wx-header">
+        <span class="wx-loc-label" id="wxLocLabel">Weather</span>
+        <button class="wx-settings-btn" id="wxSettingsBtn" title="Set location">⚙</button>
+      </div>
+      <div class="wx-settings-row" id="wxSettingsRow" style="display:none">
+        <input type="text" class="wx-loc-input" id="wxLocInput" placeholder="City, e.g. London" autocomplete="off">
+        <button class="wx-loc-save" id="wxLocSave">Set</button>
+      </div>
+      <div class="wx-err" id="wxErr" style="display:none"></div>
+      <div class="wx-strip" id="wxStrip">
+        <div class="wx-status">Set a location above to see the forecast</div>
+      </div>
+    </div>
   </div>
 
   <div class="section">
@@ -1308,6 +1466,182 @@ body::after {
   window.addEventListener('storage', () => {
     loadToday(); loadTomorrow(); renderStreak();
   });
+})();
+</script>
+<script>
+// ============================================================
+// WEATHER WIDGET — Open-Meteo (no API key needed)
+// ============================================================
+(function () {
+  'use strict';
+
+  const WX_KEY = 'weather_loc'; // {name, lat, lon}
+
+  // WMO weather code → emoji
+  const WMO = {
+    0:'☀️', 1:'🌤️', 2:'⛅', 3:'☁️',
+    45:'🌫️', 48:'🌫️',
+    51:'🌦️', 53:'🌦️', 55:'🌧️',
+    56:'🌨️', 57:'🌨️',
+    61:'🌧️', 63:'🌧️', 65:'🌧️',
+    66:'🌨️', 67:'🌨️',
+    71:'🌨️', 73:'🌨️', 75:'❄️', 77:'🌨️',
+    80:'🌦️', 81:'🌧️', 82:'🌧️',
+    85:'🌨️', 86:'❄️',
+    95:'⛈️', 96:'⛈️', 99:'⛈️',
+  };
+
+  function wmoIcon(code) {
+    return WMO[code] || '🌡️';
+  }
+
+  function windDir(deg) {
+    const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+    return dirs[Math.round(deg / 45) % 8];
+  }
+
+  function wxLoad() {
+    try { return JSON.parse(localStorage.getItem(WX_KEY)) || null; } catch { return null; }
+  }
+  function wxSave(obj) {
+    try { localStorage.setItem(WX_KEY, JSON.stringify(obj)); } catch {}
+  }
+
+  function showErr(msg) {
+    const el = document.getElementById('wxErr');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = msg ? '' : 'none';
+  }
+
+  function setStatus(msg) {
+    const strip = document.getElementById('wxStrip');
+    if (strip) strip.innerHTML = '<div class="wx-status">' + msg + '</div>';
+  }
+
+  async function geocode(name) {
+    const url = 'https://geocoding-api.open-meteo.com/v1/search?name='
+      + encodeURIComponent(name) + '&count=1&language=en&format=json';
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.results || !data.results.length) throw new Error('Location not found');
+    const r = data.results[0];
+    return { name: r.name + (r.country_code ? ', ' + r.country_code : ''), lat: r.latitude, lon: r.longitude };
+  }
+
+  async function fetchWeather(lat, lon) {
+    const url = 'https://api.open-meteo.com/v1/forecast'
+      + '?latitude=' + lat + '&longitude=' + lon
+      + '&hourly=temperature_2m,precipitation_probability,weathercode,windspeed_10m,winddirection_10m'
+      + '&wind_speed_unit=mph&forecast_days=2&timezone=auto';
+    const res = await fetch(url);
+    return res.json();
+  }
+
+  function renderWeather(data) {
+    const strip = document.getElementById('wxStrip');
+    if (!strip) return;
+
+    const times  = data.hourly.time;
+    const temps  = data.hourly.temperature_2m;
+    const rain   = data.hourly.precipitation_probability;
+    const codes  = data.hourly.weathercode;
+    const wspeed = data.hourly.windspeed_10m;
+    const wdir   = data.hourly.winddirection_10m;
+
+    // Find the current hour index
+    const now = new Date();
+    const nowIso = now.getFullYear() + '-'
+      + String(now.getMonth() + 1).padStart(2,'0') + '-'
+      + String(now.getDate()).padStart(2,'0') + 'T'
+      + String(now.getHours()).padStart(2,'0') + ':00';
+    let startIdx = times.findIndex(t => t === nowIso);
+    if (startIdx < 0) startIdx = 0;
+
+    const slots = [];
+    for (let i = startIdx; i < Math.min(startIdx + 24, times.length); i++) {
+      const t = new Date(times[i]);
+      const hour = t.getHours();
+      const label = hour === now.getHours() && i === startIdx ? 'Now' : String(hour).padStart(2,'0') + ':00';
+      const rainPct = rain[i] ?? 0;
+      slots.push(
+        '<div class="wx-slot' + (i === startIdx ? ' wx-now' : '') + '">'
+        + '<div class="wx-hour">' + label + '</div>'
+        + '<div class="wx-icon">' + wmoIcon(codes[i]) + '</div>'
+        + '<div class="wx-temp">' + Math.round(temps[i]) + '°C</div>'
+        + '<div class="wx-rain' + (rainPct < 10 ? ' wx-dry' : '') + '">' + rainPct + '%</div>'
+        + '<div class="wx-wind">' + Math.round(wspeed[i]) + ' mph<br>' + windDir(wdir[i]) + '</div>'
+        + '</div>'
+      );
+    }
+    strip.innerHTML = slots.join('');
+    // Auto-scroll so "Now" is visible (it's first, so nothing needed, but scroll to start)
+    strip.scrollLeft = 0;
+  }
+
+  async function loadWeather() {
+    const loc = wxLoad();
+    if (!loc) return;
+    const label = document.getElementById('wxLocLabel');
+    if (label) label.textContent = loc.name;
+    setStatus('Loading…');
+    try {
+      const data = await fetchWeather(loc.lat, loc.lon);
+      renderWeather(data);
+    } catch (e) {
+      setStatus('Failed to load weather — check connection');
+    }
+  }
+
+  // Settings toggle
+  document.getElementById('wxSettingsBtn').addEventListener('click', function () {
+    const row = document.getElementById('wxSettingsRow');
+    const isHidden = row.style.display === 'none';
+    row.style.display = isHidden ? '' : 'none';
+    if (isHidden) {
+      const loc = wxLoad();
+      const input = document.getElementById('wxLocInput');
+      if (loc && input) input.value = loc.name.split(',')[0];
+      if (input) setTimeout(() => input.focus(), 50);
+      showErr('');
+    }
+  });
+
+  async function saveLocation() {
+    const input = document.getElementById('wxLocInput');
+    const name = (input.value || '').trim();
+    if (!name) return;
+    showErr('');
+    const saveBtn = document.getElementById('wxLocSave');
+    saveBtn.textContent = '…';
+    saveBtn.disabled = true;
+    try {
+      const loc = await geocode(name);
+      wxSave(loc);
+      const label = document.getElementById('wxLocLabel');
+      if (label) label.textContent = loc.name;
+      document.getElementById('wxSettingsRow').style.display = 'none';
+      await loadWeather();
+    } catch (e) {
+      showErr('Location not found — try a different city name');
+    } finally {
+      saveBtn.textContent = 'Set';
+      saveBtn.disabled = false;
+    }
+  }
+
+  document.getElementById('wxLocSave').addEventListener('click', saveLocation);
+  document.getElementById('wxLocInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') saveLocation();
+    if (e.key === 'Escape') {
+      document.getElementById('wxSettingsRow').style.display = 'none';
+      showErr('');
+    }
+  });
+
+  // Initial load + refresh every 30 minutes
+  loadWeather();
+  setInterval(loadWeather, 30 * 60 * 1000);
 })();
 </script>
 <script>
