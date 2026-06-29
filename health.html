@@ -98,6 +98,51 @@ main {
   .water-embed { margin-top: 40px; }
 }
 
+.mood-section { margin-top: 32px; }
+.mood-card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 22px 22px 18px;
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+}
+.mood-buttons { display: flex; gap: 8px; margin-top: 14px; }
+.mood-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 4px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 22px;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  color: var(--text-tertiary);
+}
+.mood-btn:active { transform: scale(0.94); }
+.mood-btn.active { background: rgba(29,158,117,0.14); border-color: rgba(29,158,117,0.4); }
+.mood-btn-label {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+}
+.mood-history {
+  display: flex;
+  gap: 4px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.mood-day { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.mood-day-dot { width: 100%; height: 22px; border-radius: 6px; background: rgba(255,255,255,0.04); }
+.mood-day-label { font-size: 8.5px; font-family: var(--font-mono); color: var(--text-tertiary); }
+
 .stack-card {
   background: var(--bg-card);
   border-radius: 16px;
@@ -511,6 +556,21 @@ main {
         </select>
         <button id="stackAddBtn" class="stack-add-btn">+ Add</button>
       </div>
+    </div>
+  </div>
+
+  <div class="mood-section">
+    <div class="section-title">Mood</div>
+    <div class="mood-card">
+      <div class="sf-eyebrow">How are you feeling today?</div>
+      <div class="mood-buttons" id="moodButtons">
+        <button class="mood-btn" data-val="1">😞<span class="mood-btn-label">Bad</span></button>
+        <button class="mood-btn" data-val="2">😕<span class="mood-btn-label">Low</span></button>
+        <button class="mood-btn" data-val="3">😐<span class="mood-btn-label">Okay</span></button>
+        <button class="mood-btn" data-val="4">🙂<span class="mood-btn-label">Good</span></button>
+        <button class="mood-btn" data-val="5">😊<span class="mood-btn-label">Great</span></button>
+      </div>
+      <div class="mood-history" id="moodHistory"></div>
     </div>
   </div>
 
@@ -1072,13 +1132,76 @@ main {
   });
 })();
 </script>
+
+<!-- ============================================================
+     MOOD TRACKER
+     ============================================================ -->
+<script>
+(function () {
+  'use strict';
+  const MOOD_PREFIX = 'mood_log_';
+  const COLORS = {
+    1: 'rgba(255,107,107,0.70)',
+    2: 'rgba(255,138,77,0.70)',
+    3: 'rgba(216,171,48,0.70)',
+    4: 'rgba(110,200,150,0.70)',
+    5: 'rgba(29,158,117,0.85)',
+  };
+
+  function dayKey(offset) {
+    const d = new Date();
+    d.setDate(d.getDate() - offset);
+    return MOOD_PREFIX + d.toISOString().slice(0, 10);
+  }
+  function loadMood(offset) {
+    const v = localStorage.getItem(dayKey(offset));
+    return v ? parseInt(v, 10) : null;
+  }
+  function saveMood(val) { localStorage.setItem(dayKey(0), String(val)); }
+
+  function renderButtons() {
+    const today = loadMood(0);
+    document.querySelectorAll('.mood-btn').forEach(btn => {
+      const v = parseInt(btn.getAttribute('data-val'), 10);
+      btn.classList.toggle('active', v === today);
+    });
+  }
+
+  function renderHistory() {
+    const wrap = document.getElementById('moodHistory');
+    if (!wrap) return;
+    let html = '';
+    for (let i = 6; i >= 0; i--) {
+      const v = loadMood(i);
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const label = i === 0 ? 'Today' : d.toLocaleDateString('en-GB', { weekday: 'short' }).slice(0, 1);
+      const bg = v ? COLORS[v] : 'rgba(255,255,255,0.04)';
+      html += '<div class="mood-day"><div class="mood-day-dot" style="background:' + bg + '"></div>'
+        + '<div class="mood-day-label">' + label + '</div></div>';
+    }
+    wrap.innerHTML = html;
+  }
+
+  document.querySelectorAll('.mood-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      saveMood(parseInt(this.getAttribute('data-val'), 10));
+      renderButtons();
+      renderHistory();
+    });
+  });
+
+  renderButtons();
+  renderHistory();
+})();
+</script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   if (typeof initCloudSync !== 'function') return;
   initCloudSync({
     appKey: 'health',
     syncedKeys: ['stack:items', 'stack:version', 'stack:low', 'po_water_v1'],
-    syncedPrefixes: ['stack:taken:'],
+    syncedPrefixes: ['stack:taken:', 'mood_log_'],
     onApplied: function () { window.dispatchEvent(new Event('storage')); }
   });
 });

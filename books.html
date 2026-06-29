@@ -143,6 +143,53 @@ html, body {
 }
 .bk-goal-set-btn:hover { background: rgba(167,139,250,0.18); }
 
+/* Daily reading timer */
+.bk-timer-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(167,139,250,0.12);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+.bk-timer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.bk-timer-label {
+  font-size: 10px; letter-spacing: 0.18em; font-weight: 600;
+  color: var(--text-3); text-transform: uppercase;
+}
+.bk-timer-today {
+  font-size: 11px; color: var(--book); font-variant-numeric: tabular-nums;
+}
+.bk-timer-display {
+  font-size: 36px; font-weight: 700; text-align: center;
+  font-variant-numeric: tabular-nums; letter-spacing: 0.02em;
+  color: var(--text-1); font-family: var(--font-mono);
+  margin-bottom: 14px;
+}
+.bk-timer-controls { display: flex; gap: 8px; }
+.bk-timer-btn {
+  flex: 1; padding: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text-2);
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: background 0.14s, border-color 0.14s;
+}
+.bk-timer-btn:hover { background: rgba(255,255,255,0.08); }
+.bk-timer-btn-primary {
+  background: rgba(167,139,250,0.14);
+  border-color: rgba(167,139,250,0.35);
+  color: var(--book);
+}
+.bk-timer-btn-primary:hover { background: rgba(167,139,250,0.22); }
+.bk-timer-btn-primary.active {
+  background: rgba(167,139,250,0.28);
+  border-color: rgba(167,139,250,0.55);
+}
+
 /* Book list */
 .bk-card {
   background: var(--bg-card);
@@ -400,6 +447,19 @@ html, body {
 
   <!-- Annual reading goal -->
   <div class="bk-goal-card" id="bkGoalCard"></div>
+
+  <!-- Daily reading timer -->
+  <div class="bk-timer-card" id="bkTimerCard">
+    <div class="bk-timer-header">
+      <span class="bk-timer-label">Reading Timer</span>
+      <span class="bk-timer-today" id="bkTimerToday">0m today</span>
+    </div>
+    <div class="bk-timer-display" id="bkTimerDisplay">00:00</div>
+    <div class="bk-timer-controls">
+      <button class="bk-timer-btn bk-timer-btn-primary" id="bkTimerToggle">Start</button>
+      <button class="bk-timer-btn" id="bkTimerReset">Reset</button>
+    </div>
+  </div>
 
   <!-- Filters -->
   <div class="bk-filters">
@@ -923,6 +983,79 @@ html, body {
 
   bkRebuildGenreDropdowns();
   bkRender();
+})();
+</script>
+
+<!-- ============================================================
+     DAILY READING TIMER
+     ============================================================ -->
+<script>
+(function () {
+  'use strict';
+  const PREFIX = 'reading_time_';
+
+  function todayKey() { return PREFIX + new Date().toISOString().slice(0, 10); }
+  function loadTodaySeconds() { return parseInt(localStorage.getItem(todayKey()) || '0', 10); }
+  function saveTodaySeconds(s) { localStorage.setItem(todayKey(), String(s)); }
+  function fmtClock(sec) {
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+  function fmtToday(sec) {
+    const m = Math.round(sec / 60);
+    return m + 'm today';
+  }
+
+  const displayEl = document.getElementById('bkTimerDisplay');
+  const todayEl = document.getElementById('bkTimerToday');
+  const toggleBtn = document.getElementById('bkTimerToggle');
+  const resetBtn = document.getElementById('bkTimerReset');
+  if (!displayEl || !toggleBtn || !resetBtn) return;
+
+  let running = false;
+  let sessionSeconds = 0;
+  let intervalId = null;
+  let todaySeconds = loadTodaySeconds();
+
+  function renderToday() { todayEl.textContent = fmtToday(todaySeconds + sessionSeconds); }
+  function renderSession() { displayEl.textContent = fmtClock(sessionSeconds); }
+
+  function tick() {
+    sessionSeconds++;
+    saveTodaySeconds(todaySeconds + sessionSeconds);
+    renderSession();
+    renderToday();
+  }
+
+  function start() {
+    running = true;
+    toggleBtn.textContent = 'Pause';
+    toggleBtn.classList.add('active');
+    intervalId = setInterval(tick, 1000);
+  }
+  function pause() {
+    running = false;
+    toggleBtn.textContent = 'Start';
+    toggleBtn.classList.remove('active');
+    clearInterval(intervalId);
+    todaySeconds += sessionSeconds;
+    sessionSeconds = 0;
+    saveTodaySeconds(todaySeconds);
+    renderSession();
+    renderToday();
+  }
+
+  toggleBtn.addEventListener('click', function () {
+    if (running) pause(); else start();
+  });
+  resetBtn.addEventListener('click', function () {
+    if (running) pause();
+    sessionSeconds = 0;
+    renderSession();
+  });
+
+  renderToday();
+  renderSession();
 })();
 </script>
 

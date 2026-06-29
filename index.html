@@ -558,6 +558,131 @@ body::after {
 }
 .age-dob-save:hover { background: rgba(255,255,255,0.14); }
 
+/* ===== Pomodoro Focus Timer card ===== */
+.pomo-sessions {
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.pomo-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 4px 0 16px;
+}
+.pomo-ring { width: 150px; height: 150px; transform: rotate(-90deg); }
+.pomo-ring-bg { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 7; }
+.pomo-ring-fg {
+  fill: none;
+  stroke: var(--text-primary);
+  stroke-width: 7;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.4s linear, stroke 0.4s ease;
+}
+.pomo-time-wrap {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+.pomo-time {
+  font-size: 30px; font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.pomo-phase {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  margin-top: 4px;
+}
+.pomo-controls { display: flex; gap: 8px; justify-content: center; }
+.pomo-btn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.10);
+  transition: background 0.15s, transform 0.1s;
+}
+.pomo-btn:active { transform: scale(0.96); }
+.pomo-btn-secondary { background: rgba(255,255,255,0.04); color: var(--text-secondary); }
+.pomo-btn-secondary:hover { background: rgba(255,255,255,0.08); }
+.pomo-btn-primary {
+  flex: 1; max-width: 140px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #E8E5DD 100%);
+  color: #0A0A0B;
+  border: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 4px 14px rgba(0,0,0,0.3);
+}
+.pomo-btn-primary:hover { filter: brightness(1.05); }
+
+/* ===== Countdown cards (incl. payday) ===== */
+.cd-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.cd-row::-webkit-scrollbar { display: none; }
+.cd-item {
+  position: relative;
+  flex-shrink: 0;
+  min-width: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 14px 12px 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+}
+.cd-item-name {
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.cd-item-days {
+  font-size: 28px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  line-height: 1;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.cd-item-sub { font-size: 10px; color: var(--text-tertiary); font-family: var(--font-mono); }
+.cd-item-del {
+  position: absolute; top: 3px; right: 5px;
+  background: transparent; border: none;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 4px;
+  opacity: 0.6;
+  line-height: 1;
+}
+.cd-item-del:hover { color: var(--danger); opacity: 1; }
+.cd-item-payday { border-color: rgba(107,227,164,0.18); background: rgba(107,227,164,0.05); }
+.cd-item-payday .cd-item-days { color: var(--success); }
+.cd-add-row { display: flex; gap: 6px; margin-top: 10px; align-items: center; }
+
 /* ===== Component 4: section + To Do List ===== */
 .section { margin-top: 8px; }
 .section-title {
@@ -996,6 +1121,43 @@ body::after {
     <div class="age-dob-row" id="ageDobRow" style="display:none">
       <input type="date" class="age-dob-input" id="ageDobInput">
       <button class="age-dob-save" id="ageDobSave">Set</button>
+    </div>
+  </div>
+
+  <!-- Pomodoro Focus Timer -->
+  <div class="gm-card pomo-card" id="pomoCard" style="margin-bottom:14px;">
+    <div class="wx-header" style="margin-bottom:14px">
+      <span class="wx-loc-label" id="pomoModeLabel">Focus Timer</span>
+      <span class="pomo-sessions" id="pomoSessions">0 sessions today</span>
+    </div>
+    <div class="pomo-body">
+      <svg class="pomo-ring" viewBox="0 0 120 120">
+        <circle class="pomo-ring-bg" cx="60" cy="60" r="52"></circle>
+        <circle class="pomo-ring-fg" id="pomoRingFg" cx="60" cy="60" r="52"></circle>
+      </svg>
+      <div class="pomo-time-wrap">
+        <div class="pomo-time" id="pomoTime">25:00</div>
+        <div class="pomo-phase" id="pomoPhase">Focus</div>
+      </div>
+    </div>
+    <div class="pomo-controls">
+      <button class="pomo-btn pomo-btn-secondary" id="pomoResetBtn">Reset</button>
+      <button class="pomo-btn pomo-btn-primary" id="pomoStartBtn">Start</button>
+      <button class="pomo-btn pomo-btn-secondary" id="pomoSkipBtn">Skip</button>
+    </div>
+  </div>
+
+  <!-- Countdowns (incl. next payday) -->
+  <div class="gm-card" id="countdownCard" style="margin-bottom:14px;">
+    <div class="wx-header" style="margin-bottom:12px">
+      <span class="wx-loc-label">Countdowns</span>
+      <button class="wx-settings-btn" id="cdAddBtn" title="Add countdown">+</button>
+    </div>
+    <div class="cd-row" id="cdRow"></div>
+    <div class="cd-add-row" id="cdAddRow" style="display:none">
+      <input type="text" class="wx-loc-input" id="cdNameInput" placeholder="Name (e.g. Holiday)" autocomplete="off">
+      <input type="date" class="age-dob-input" id="cdDateInput" style="flex:0 0 130px">
+      <button class="wx-loc-save" id="cdSaveBtn">Add</button>
     </div>
   </div>
 
@@ -2045,6 +2207,208 @@ body::after {
 
   loadDob();
   if (dob) startTicking();
+})();
+</script>
+
+<!-- ============================================================
+     POMODORO FOCUS TIMER
+     ============================================================ -->
+<script>
+(function () {
+  const WORK = 25 * 60, SHORT = 5 * 60, LONG = 15 * 60;
+  const CIRC = 2 * Math.PI * 52;
+
+  const ringFg    = document.getElementById('pomoRingFg');
+  const timeEl    = document.getElementById('pomoTime');
+  const phaseEl   = document.getElementById('pomoPhase');
+  const sessionsEl = document.getElementById('pomoSessions');
+  const startBtn  = document.getElementById('pomoStartBtn');
+  const resetBtn  = document.getElementById('pomoResetBtn');
+  const skipBtn   = document.getElementById('pomoSkipBtn');
+  if (!ringFg) return;
+
+  ringFg.style.strokeDasharray = CIRC;
+
+  let mode = 'focus';
+  let totalTime = WORK;
+  let timeLeft = WORK;
+  let running = false;
+  let timerId = null;
+  let cycleCount = 0;
+
+  function sessKey() { return 'pomo_sessions_' + new Date().toISOString().slice(0, 10); }
+  function loadSessions() { return parseInt(localStorage.getItem(sessKey()) || '0', 10); }
+  function bumpSessions() { localStorage.setItem(sessKey(), loadSessions() + 1); renderSessions(); }
+  function renderSessions() {
+    const n = loadSessions();
+    sessionsEl.textContent = n + (n === 1 ? ' session today' : ' sessions today');
+  }
+
+  function fmt(s) {
+    const m = Math.floor(s / 60), sec = s % 60;
+    return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+  }
+
+  function applyMode(newMode) {
+    mode = newMode;
+    if (mode === 'focus') { totalTime = WORK; phaseEl.textContent = 'Focus'; ringFg.style.stroke = 'var(--text-primary)'; }
+    else if (mode === 'short') { totalTime = SHORT; phaseEl.textContent = 'Short Break'; ringFg.style.stroke = 'var(--success)'; }
+    else { totalTime = LONG; phaseEl.textContent = 'Long Break'; ringFg.style.stroke = '#7DD3FC'; }
+    timeLeft = totalTime;
+    render();
+  }
+
+  function render() {
+    timeEl.textContent = fmt(timeLeft);
+    const frac = timeLeft / totalTime;
+    ringFg.style.strokeDashoffset = CIRC * (1 - frac);
+  }
+
+  function tick() {
+    timeLeft--;
+    if (timeLeft <= 0) {
+      pause();
+      if (mode === 'focus') {
+        bumpSessions();
+        cycleCount++;
+        applyMode(cycleCount % 4 === 0 ? 'long' : 'short');
+      } else {
+        applyMode('focus');
+      }
+      return;
+    }
+    render();
+  }
+
+  function play() { running = true; startBtn.textContent = 'Pause'; timerId = setInterval(tick, 1000); }
+  function pause() { running = false; startBtn.textContent = 'Start'; clearInterval(timerId); }
+
+  startBtn.addEventListener('click', () => running ? pause() : play());
+  resetBtn.addEventListener('click', () => { pause(); applyMode(mode); });
+  skipBtn.addEventListener('click', () => {
+    pause();
+    if (mode === 'focus') applyMode(((cycleCount + 1) % 4 === 0) ? 'long' : 'short');
+    else applyMode('focus');
+  });
+
+  applyMode('focus');
+  renderSessions();
+})();
+</script>
+
+<!-- ============================================================
+     COUNTDOWN CARDS + NEXT PAYDAY
+     ============================================================ -->
+<script>
+(function () {
+  const SALARY_PERIODS = [
+    { month: 'April 2026',     from: '2026-03-16', to: '2026-04-12', payYear: 2026, payMonth: 3  },
+    { month: 'May 2026',       from: '2026-04-13', to: '2026-05-17', payYear: 2026, payMonth: 4  },
+    { month: 'June 2026',      from: '2026-05-18', to: '2026-06-14', payYear: 2026, payMonth: 5  },
+    { month: 'July 2026',      from: '2026-06-15', to: '2026-07-12', payYear: 2026, payMonth: 6  },
+    { month: 'August 2026',    from: '2026-07-13', to: '2026-08-09', payYear: 2026, payMonth: 7  },
+    { month: 'September 2026', from: '2026-08-10', to: '2026-09-13', payYear: 2026, payMonth: 8  },
+    { month: 'October 2026',   from: '2026-09-14', to: '2026-10-11', payYear: 2026, payMonth: 9  },
+    { month: 'November 2026',  from: '2026-10-12', to: '2026-11-15', payYear: 2026, payMonth: 10 },
+    { month: 'December 2026',  from: '2026-11-16', to: '2026-12-13', payYear: 2026, payMonth: 11 },
+    { month: 'January 2027',   from: '2026-12-14', to: '2027-01-10', payYear: 2027, payMonth: 0  },
+    { month: 'February 2027',  from: '2027-01-11', to: '2027-02-07', payYear: 2027, payMonth: 1  },
+    { month: 'March 2027',     from: '2027-02-08', to: '2027-03-14', payYear: 2027, payMonth: 2  },
+  ];
+
+  function lastWorkingDay(year, month) {
+    let d = new Date(year, month + 1, 0);
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1);
+    return d;
+  }
+
+  function nextPayday() {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const dates = SALARY_PERIODS.map(p => lastWorkingDay(p.payYear, p.payMonth));
+    for (const d of dates) { if (d >= today) return d; }
+    return null;
+  }
+
+  const CD_KEY = 'index_countdowns';
+  function cdLoad() { try { return JSON.parse(localStorage.getItem(CD_KEY)) || []; } catch { return []; } }
+  function cdSave(arr) { localStorage.setItem(CD_KEY, JSON.stringify(arr)); }
+
+  function daysUntil(dateStr) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const target = new Date(dateStr); target.setHours(0, 0, 0, 0);
+    return Math.round((target - today) / 86400000);
+  }
+
+  function renderCountdowns() {
+    const row = document.getElementById('cdRow');
+    if (!row) return;
+    let html = '';
+
+    const pd = nextPayday();
+    if (pd) {
+      const n = daysUntil(pd.toISOString().slice(0, 10));
+      html += '<div class="cd-item cd-item-payday">'
+        + '<div class="cd-item-name">💰 Payday</div>'
+        + '<div class="cd-item-days">' + (n <= 0 ? 'Today' : n) + '</div>'
+        + (n > 0 ? '<div class="cd-item-sub">days</div>' : '')
+        + '</div>';
+    }
+
+    const items = cdLoad().slice().sort((a, b) => daysUntil(a.date) - daysUntil(b.date));
+    for (const item of items) {
+      const n = daysUntil(item.date);
+      html += '<div class="cd-item">'
+        + '<button class="cd-item-del" data-id="' + item.id + '">×</button>'
+        + '<div class="cd-item-name">' + item.name + '</div>'
+        + '<div class="cd-item-days">' + (n < 0 ? 'Past' : (n === 0 ? 'Today' : n)) + '</div>'
+        + (n > 0 ? '<div class="cd-item-sub">days</div>' : '')
+        + '</div>';
+    }
+
+    if (!pd && !items.length) html = '<div class="tide-status-msg">No countdowns yet</div>';
+
+    row.innerHTML = html;
+    row.querySelectorAll('.cd-item-del').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const id = this.getAttribute('data-id');
+        cdSave(cdLoad().filter(i => String(i.id) !== id));
+        renderCountdowns();
+      });
+    });
+  }
+
+  const addBtn  = document.getElementById('cdAddBtn');
+  const addRow  = document.getElementById('cdAddRow');
+  const nameInp = document.getElementById('cdNameInput');
+  const dateInp = document.getElementById('cdDateInput');
+  const saveBtn = document.getElementById('cdSaveBtn');
+
+  if (addBtn) {
+    addBtn.addEventListener('click', function () {
+      const isHidden = addRow.style.display === 'none';
+      addRow.style.display = isHidden ? '' : 'none';
+      if (isHidden) setTimeout(() => nameInp.focus(), 40);
+    });
+  }
+
+  function addCountdown() {
+    const name = (nameInp.value || '').trim();
+    const date = dateInp.value;
+    if (!name || !date) return;
+    const arr = cdLoad();
+    arr.push({ id: Date.now(), name, date });
+    cdSave(arr);
+    nameInp.value = '';
+    dateInp.value = '';
+    addRow.style.display = 'none';
+    renderCountdowns();
+  }
+
+  if (saveBtn) saveBtn.addEventListener('click', addCountdown);
+  if (nameInp) nameInp.addEventListener('keydown', e => { if (e.key === 'Enter') addCountdown(); });
+
+  renderCountdowns();
+  setInterval(renderCountdowns, 60 * 60 * 1000);
 })();
 </script>
 
