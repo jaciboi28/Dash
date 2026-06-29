@@ -438,48 +438,6 @@ body::after {
   font-family: var(--font-mono);
   margin-top: 3px;
 }
-.tide-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  border-top: 1px solid rgba(255,255,255,0.06);
-  padding-top: 10px;
-}
-.tide-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-  font-family: var(--font-mono);
-}
-.tide-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-.tide-badge-high { color: #7DD3FC; }
-.tide-badge-low  { color: var(--text-tertiary); }
-.tide-time {
-  color: var(--text-primary);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.tide-height {
-  font-size: 10px;
-  color: var(--text-tertiary);
-  margin-left: 4px;
-}
-.tide-station-name {
-  font-size: 9.5px;
-  color: var(--text-tertiary);
-  font-family: var(--font-mono);
-  letter-spacing: 0.05em;
-  margin-bottom: 6px;
-  text-transform: uppercase;
-}
 .tide-status-msg {
   font-size: 11px;
   color: var(--text-tertiary);
@@ -488,26 +446,6 @@ body::after {
   text-align: center;
   padding: 4px 0;
 }
-.tide-key-row {
-  display: flex;
-  gap: 6px;
-  margin-top: 8px;
-  align-items: center;
-}
-.tide-key-input {
-  flex: 1;
-  padding: 7px 10px;
-  background: rgba(0,0,0,0.30);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 9px;
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  outline: none;
-  min-width: 0;
-}
-.tide-key-input::placeholder { color: var(--text-tertiary); }
-.tide-key-input:focus { border-color: rgba(255,255,255,0.28); }
 
 /* ===== On This Day card ===== */
 .otd-eyebrow {
@@ -1024,30 +962,15 @@ body::after {
   <!-- Mini widget row: Moon & Tides | On This Day -->
   <div class="mini-row">
 
-    <!-- Moon & Tides -->
-    <div class="gm-card mini-card" id="moonTideCard">
-      <div class="wx-header" style="margin-bottom:12px">
-        <span class="wx-loc-label">Moon &amp; Tides</span>
-        <button class="wx-settings-btn" id="tideSettingsBtn" title="Set WorldTides API key">⚙</button>
-      </div>
-      <div id="tideKeySettingsRow" style="display:none;margin-bottom:10px;">
-        <div style="font-size:10px;color:var(--text-tertiary);font-family:var(--font-mono);margin-bottom:6px;">
-          Free key: <span style="color:var(--text-secondary)">admiraltyapi.azure-api.net</span> → sign up → UK Tidal API
-        </div>
-        <div class="tide-key-row">
-          <input type="text" class="tide-key-input" id="tideKeyInput" placeholder="Paste API key" autocomplete="off">
-          <button class="wx-loc-save" id="tideKeySave">Set</button>
-        </div>
-      </div>
+    <!-- Moon Phase -->
+    <div class="gm-card mini-card">
+      <div class="wx-loc-label" style="display:block;margin-bottom:12px">Moon Phase</div>
       <div class="moon-row">
         <div class="moon-emoji" id="moonEmoji">🌑</div>
         <div>
           <div class="moon-name" id="moonName">—</div>
           <div class="moon-illum" id="moonIllum">—</div>
         </div>
-      </div>
-      <div class="tide-list" id="tideList">
-        <div class="tide-status-msg" id="tideMsg">Add API key above for tide times</div>
       </div>
     </div>
 
@@ -2016,123 +1939,6 @@ body::after {
 })();
 </script>
 
-<!-- ============================================================
-     TIDE TIMES (UK Admiralty API — free key from admiraltyapi.azure-api.net)
-     ============================================================ -->
-<script>
-(function () {
-  const TIDE_KEY     = 'tide_api_key';
-  const STATION_CACHE = 'tide_station_cache'; // {id, name, forLat, forLon}
-  const BASE         = 'https://admiraltyapi.azure-api.net/uktidalapi/api/V1';
-
-  function tideKeyLoad() { return localStorage.getItem(TIDE_KEY) || ''; }
-  function tideKeySave(k) { localStorage.setItem(TIDE_KEY, k); }
-
-  const settingsBtn = document.getElementById('tideSettingsBtn');
-  const settingsRow = document.getElementById('tideKeySettingsRow');
-  const keyInput    = document.getElementById('tideKeyInput');
-  const saveBtn     = document.getElementById('tideKeySave');
-  const tideList    = document.getElementById('tideList');
-
-  function showTideMsg(msg) {
-    if (tideList) tideList.innerHTML = '<div class="tide-status-msg">' + msg + '</div>';
-  }
-
-  function haversine(lat1, lon1, lat2, lon2) {
-    const R = 6371, r = Math.PI / 180;
-    const dLat = (lat2 - lat1) * r, dLon = (lon2 - lon1) * r;
-    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*r) * Math.cos(lat2*r) * Math.sin(dLon/2)**2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  }
-
-  async function nearestStation(lat, lon, apiKey) {
-    const cached = JSON.parse(localStorage.getItem(STATION_CACHE) || 'null');
-    if (cached && Math.abs(cached.forLat - lat) < 0.05 && Math.abs(cached.forLon - lon) < 0.05) {
-      return cached;
-    }
-    const res  = await fetch(BASE + '/Stations', { headers: { 'Ocp-Apim-Subscription-Key': apiKey } });
-    if (!res.ok) throw new Error('Auth failed (' + res.status + ')');
-    const geo  = await res.json();
-    const feats = geo.features || [];
-    if (!feats.length) throw new Error('No stations returned');
-    let best = null, bestD = Infinity;
-    for (const f of feats) {
-      const [slon, slat] = f.geometry.coordinates;
-      const d = haversine(lat, lon, slat, slon);
-      if (d < bestD) { bestD = d; best = { id: f.properties.Id, name: f.properties.Name, forLat: lat, forLon: lon }; }
-    }
-    localStorage.setItem(STATION_CACHE, JSON.stringify(best));
-    return best;
-  }
-
-  async function loadAndRenderTides(apiKey) {
-    const locRaw = localStorage.getItem('weather_loc');
-    if (!locRaw) { showTideMsg('Set weather location first'); return; }
-    const loc = JSON.parse(locRaw);
-    showTideMsg('Finding nearest station…');
-    try {
-      const station = await nearestStation(loc.lat, loc.lon, apiKey);
-      showTideMsg('Loading tides for ' + station.name + '…');
-      const res    = await fetch(BASE + '/Stations/' + station.id + '/TidalEvents?duration=1',
-        { headers: { 'Ocp-Apim-Subscription-Key': apiKey } });
-      if (!res.ok) throw new Error('Fetch failed (' + res.status + ')');
-      const events = await res.json();
-      if (!Array.isArray(events) || !events.length) { showTideMsg('No tide data returned'); return; }
-      const today = new Date();
-      const todays = events.filter(e => {
-        const d = new Date(e.DateTime);
-        return d.getDate() === today.getDate() && d.getMonth() === today.getMonth();
-      });
-      if (!todays.length) { showTideMsg('No tides for today at ' + station.name); return; }
-      if (tideList) {
-        tideList.innerHTML =
-          '<div class="tide-station-name">' + station.name + '</div>'
-          + todays.map(e => {
-            const t    = new Date(e.DateTime);
-            const time = t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-            const hi   = e.EventType === 'HighWater';
-            const hStr = e.Height != null ? ' <span class="tide-height">(' + e.Height.toFixed(1) + 'm)</span>' : '';
-            return '<div class="tide-item">'
-              + '<span class="tide-badge ' + (hi ? 'tide-badge-high' : 'tide-badge-low') + '">'
-              + (hi ? '▲ High' : '▼ Low') + '</span>'
-              + '<span class="tide-time">' + time + hStr + '</span>'
-              + '</div>';
-          }).join('');
-      }
-    } catch (e) {
-      showTideMsg('Failed — ' + e.message);
-    }
-  }
-
-  if (settingsBtn) {
-    settingsBtn.addEventListener('click', function () {
-      const isHidden = settingsRow.style.display === 'none';
-      settingsRow.style.display = isHidden ? '' : 'none';
-      if (isHidden) { keyInput.value = tideKeyLoad(); setTimeout(() => keyInput.focus(), 40); }
-    });
-  }
-
-  if (saveBtn) {
-    saveBtn.addEventListener('click', async function () {
-      const val = (keyInput.value || '').trim();
-      if (!val) return;
-      tideKeySave(val);
-      localStorage.removeItem(STATION_CACHE); // recompute nearest station
-      settingsRow.style.display = 'none';
-      await loadAndRenderTides(val);
-    });
-  }
-  if (keyInput) {
-    keyInput.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') saveBtn && saveBtn.click();
-      if (e.key === 'Escape') settingsRow.style.display = 'none';
-    });
-  }
-
-  const savedKey = tideKeyLoad();
-  if (savedKey) loadAndRenderTides(savedKey);
-})();
-</script>
 
 <!-- ============================================================
      ON THIS DAY (Wikipedia REST API)
