@@ -2177,6 +2177,33 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     const num = (Number(amountCHF) || 0) * rate;
     return symbol + ' ' + num.toLocaleString('en-US', { minimumFractionDigits: num % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 });
   }
+  function fmtNum(symbol, num) {
+    return symbol + ' ' + num.toLocaleString('en-US', { minimumFractionDigits: num % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 });
+  }
+  // Subscription/wishlist items remember what currency + amount they were
+  // actually entered in. When that matches the display currency, show that
+  // exact figure instead of round-tripping through CHF with today's live
+  // exchange rate — otherwise the price appears to drift on every reload
+  // even though nothing changed. Only fall back to a live CHF conversion
+  // when the display currency genuinely differs from what was entered.
+  function fmtItemMoney(item) {
+    const symbol = currencyEl ? currencyEl.value : 'CHF';
+    const entCcy = item.entered_currency || 'CHF';
+    if (entCcy === symbol && item.entered_amount != null) {
+      return fmtNum(symbol, Number(item.entered_amount) || 0);
+    }
+    return fmtMoney(item.amount);
+  }
+  function fmtSubMonthly(item) {
+    const symbol = currencyEl ? currencyEl.value : 'CHF';
+    const entCcy = item.entered_currency || 'CHF';
+    if (entCcy === symbol && item.entered_amount != null) {
+      const a = Number(item.entered_amount) || 0;
+      const num = item.period === 'yearly' ? a / 12 : item.period === 'weekly' ? a * 4.345 : a;
+      return fmtNum(symbol, num);
+    }
+    return fmtMoney(monthlyEquivalent(item));
+  }
 
   function renderNetWorthCategory(cat) {
     const items = storeGet('nw:' + cat.key) || [];
@@ -2722,11 +2749,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         metaLine;
       const cost = document.createElement('div');
       cost.style.cssText = 'text-align:right;line-height:1.1';
-      const bigNum = fmtMoney(m);
+      const bigNum = fmtSubMonthly(it);
       const origHint = (it.entered_currency && it.entered_currency !== 'CHF' && it.entered_amount != null)
         ? '<div style="font-size:10px;color:var(--text-tertiary);margin-top:2px">billed ' + it.entered_currency + ' ' + Number(it.entered_amount).toLocaleString('en-US', { minimumFractionDigits: it.entered_amount % 1 === 0 ? 0 : 2, maximumFractionDigits: 2 }) + ' / ' + it.period + '</div>'
         : (it.period !== 'monthly'
-            ? '<div style="font-size:10px;color:var(--text-tertiary);margin-top:2px">billed ' + fmtMoney(it.amount) + ' / ' + it.period + '</div>'
+            ? '<div style="font-size:10px;color:var(--text-tertiary);margin-top:2px">billed ' + fmtItemMoney(it) + ' / ' + it.period + '</div>'
             : '');
       cost.innerHTML = '<div style="font-size:20px;font-weight:700;color:var(--text-primary);font-variant-numeric:tabular-nums">' + bigNum + '</div>' +
         '<div style="font-size:10px;color:var(--text-tertiary);margin-top:1px">/ month</div>' +
@@ -3045,7 +3072,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         +   '<div class="wish-row-meta">' + (it.entered_currency || 'CHF') + ' ' + Number(it.entered_amount != null ? it.entered_amount : it.amount).toLocaleString('en-US', {maximumFractionDigits: 2}) + ' · added ' + fmtActivityDate(it.ts || Date.now()) + '</div>'
         + '</div>'
         + '<div class="wish-row-amt-wrap">'
-        +   '<div class="wish-row-amt">' + fmtMoney(cost) + '</div>'
+        +   '<div class="wish-row-amt">' + fmtItemMoney(it) + '</div>'
         +   '<div class="wish-row-pct ' + cls + '">' + pctText + ' of NW</div>'
         + '</div>'
         + '<button class="wish-row-x" data-i="' + idx + '" aria-label="Remove">×</button>'
