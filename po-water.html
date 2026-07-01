@@ -1092,6 +1092,14 @@ html, body {
 
   // BOOT
   renderAll();
+
+  // Pick up changes made outside this window/frame (e.g. the topbar's
+  // +1 quick-add button on the parent page when embedded via iframe).
+  window.addEventListener('storage', (e) => {
+    if (e.key && e.key !== LS_KEY) return;
+    state = loadState();
+    renderAll();
+  });
 })();
 </script>
 <style>

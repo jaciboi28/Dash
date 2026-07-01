@@ -365,7 +365,7 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
     }, { passive: false });
   }
   function startModalLock() {
-    const MODAL_SELECTORS = ['.modal-bg', '.po-modal-bg', '.wt-overlay', '.wt-viewer', '.wt-cam'];
+    const MODAL_SELECTORS = ['.modal-bg', '.po-modal-bg', '.pb-modal-bg', '.wt-overlay', '.wt-viewer', '.wt-cam'];
     function anyOpen() {
       for (const sel of MODAL_SELECTORS) {
         const els = document.querySelectorAll(sel);

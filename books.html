@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0b">
 <title>Books</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="sync.js" defer></script>
 <script src="topbar.js" defer></script>
 
 <style>
@@ -862,7 +864,8 @@ html, body {
     const author = $('bkAuthor').value.trim();
     const pages  = parseInt($('bkPages').value, 10);
     const status = $('bkStatus').value;
-    const currentPage = parseInt($('bkCurrentPage').value, 10) || null;
+    const currentPageRaw = parseInt($('bkCurrentPage').value, 10);
+    const currentPage = isNaN(currentPageRaw) ? null : currentPageRaw;
     let genre    = $('bkGenre').value;
 
     if (genre === 'Other') {
@@ -983,6 +986,11 @@ html, body {
 
   bkRebuildGenreDropdowns();
   bkRender();
+
+  window.addEventListener('storage', () => {
+    bkRebuildGenreDropdowns();
+    bkRender();
+  });
 })();
 </script>
 
@@ -994,7 +1002,11 @@ html, body {
   'use strict';
   const PREFIX = 'reading_time_';
 
-  function todayKey() { return PREFIX + new Date().toISOString().slice(0, 10); }
+  function todayKey() {
+    const d = new Date();
+    const local = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    return PREFIX + local;
+  }
   function loadTodaySeconds() { return parseInt(localStorage.getItem(todayKey()) || '0', 10); }
   function saveTodaySeconds(s) { localStorage.setItem(todayKey(), String(s)); }
   function fmtClock(sec) {
@@ -1057,6 +1069,18 @@ html, body {
   renderToday();
   renderSession();
 })();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof initCloudSync !== 'function') return;
+  initCloudSync({
+    appKey: 'books',
+    syncedKeys: ['books_library', 'books_custom_genres', 'books_reading_goal'],
+    syncedPrefixes: ['reading_time_'],
+    onApplied: function () { window.dispatchEvent(new Event('storage')); }
+  });
+});
 </script>
 
 </body>

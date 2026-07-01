@@ -2100,6 +2100,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   function storeSet(key, value) {
     try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
   }
+  // Round to the nearest cent so repeated arithmetic (currency conversion,
+  // subscription/order deduct-undo cycles) can't accumulate float drift.
+  function round2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
 
   // ============================================================
   // ORD_FROM_META — must be hoisted to the top of the IIFE.
@@ -2238,7 +2241,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         if (!isNaN(n)) nextDisplay = n;
       }
       if (nextDisplay < 0) nextDisplay = 0;
-      const nextCHF = nextDisplay / rate;
+      const nextCHF = round2(nextDisplay / rate);
       const deltaCHF = nextCHF - curCHF;
       items[idx].amount = nextCHF;
       storeSet('nw:' + catKey, items);
@@ -2821,7 +2824,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
           const idx = nwItems.findIndex(x => String(x.name) === String(it.fromAccount));
           if (idx < 0) break;
           const cost = Number(it.amount) || 0;
-          nwItems[idx].amount = (Number(nwItems[idx].amount) || 0) - cost;
+          nwItems[idx].amount = round2((Number(nwItems[idx].amount) || 0) - cost);
           storeSet('nw:' + it.fromCat, nwItems);
           logActivity(it.fromCat, nwItems[idx].name, -cost, 'edit');
           it.lastDeductedAt = renewalMs;
@@ -3328,7 +3331,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     const grandBefore = nwGrandCHF();
     const pctAtDeduction = grandBefore > 0 ? (cost / grandBefore) * 100 : 0;
     // Subtract from the chosen NW account
-    items[itemIdx].amount = (Number(items[itemIdx].amount) || 0) - cost;
+    items[itemIdx].amount = round2((Number(items[itemIdx].amount) || 0) - cost);
     storeSet('nw:' + catKey, items);
     logActivity(catKey, items[itemIdx].name, -cost, 'edit');
     // Mark the order as deducted with frozen %
@@ -3351,7 +3354,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     const items = storeGet('nw:' + order.deductedFrom.cat) || [];
     const itemIdx = items.findIndex(it => String(it.name) === String(order.deductedFrom.name));
     if (itemIdx >= 0) {
-      items[itemIdx].amount = (Number(items[itemIdx].amount) || 0) + cost;
+      items[itemIdx].amount = round2((Number(items[itemIdx].amount) || 0) + cost);
       storeSet('nw:' + order.deductedFrom.cat, items);
       logActivity(order.deductedFrom.cat, items[itemIdx].name, cost, 'edit');
     }
@@ -3657,7 +3660,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     const heroEl = document.getElementById('salHero');
     if (heroEl) {
       if (!curPeriod) {
-        heroEl.innerHTML = '<div style="font-size:13px;color:var(--text-tertiary);text-align:center;padding:8px 0">No active pay period — schedule ends March 2027.</div>';
+        const beforeStart = SALARY_PERIODS.length > 0 && todayIso < SALARY_PERIODS[0].from;
+        const msg = beforeStart
+          ? 'No active pay period — schedule starts ' + salFmtShort(SALARY_PERIODS[0].from) + '.'
+          : 'No active pay period — schedule ends March 2027.';
+        heroEl.innerHTML = '<div style="font-size:13px;color:var(--text-tertiary);text-align:center;padding:8px 0">' + msg + '</div>';
       } else {
         const periodDays = days.filter(d => d >= curPeriod.from && d <= curPeriod.to);
         const payD = salLastWorkingDay(curPeriod.payYear, curPeriod.payMonth);
@@ -3785,7 +3792,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (typeof initCloudSync !== 'function') return;
   initCloudSync({
     appKey: 'finance',
-    syncedKeys: ['subs', 'wishlist', 'incoming_orders', 'nw_currency', 'nw:activity', 'nw:history', 'salary_daily_rate', 'salary_worked_days'],
+    syncedKeys: ['subs', 'wishlist', 'incoming_orders', 'nw_currency', 'nw:activity', 'nw:history', 'salary_daily_rate', 'salary_worked_days', 'finance_active_tab'],
     syncedPrefixes: ['nw:'],
     onApplied: function () { window.dispatchEvent(new Event('storage')); }
   });

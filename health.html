@@ -926,12 +926,6 @@ main {
     else if (btn.dataset.action === 'low') toggleLow(id);
     else if (btn.dataset.action === 'del') deleteItem(id);
   });
-  document.getElementById('stackGroups').addEventListener('pointerdown', (e) => {
-    const btn = e.target.closest('[data-action="del"]');
-    if (!btn) return;
-    e.preventDefault(); e.stopPropagation();
-    deleteItem(btn.dataset.id);
-  });
   document.getElementById('stackGroups').addEventListener('click', (e) => {
     const editEl = e.target.closest('[data-edit]');
     if (!editEl) return;
@@ -1151,7 +1145,8 @@ main {
   function dayKey(offset) {
     const d = new Date();
     d.setDate(d.getDate() - offset);
-    return MOOD_PREFIX + d.toISOString().slice(0, 10);
+    const local = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    return MOOD_PREFIX + local;
   }
   function loadMood(offset) {
     const v = localStorage.getItem(dayKey(offset));

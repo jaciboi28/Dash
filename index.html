@@ -1084,7 +1084,7 @@ body::after {
     </div>
   </div>
 
-  <!-- Mini widget row: Moon & Tides | On This Day -->
+  <!-- Mini widget row: Moon Phase | On This Day -->
   <div class="mini-row">
 
     <!-- Moon Phase -->
@@ -1221,9 +1221,6 @@ body::after {
 
   // Paste your Anthropic key here to enable ✨ Polish. Empty = falls back to plain add.
   const ANTHROPIC_API_KEY = '';
-
-  const WAKE_HOUR  = 8;
-  const SLEEP_HOUR = 24;
 
   // ---------- storage helpers ----------
   function storeGet(key) {
@@ -1513,7 +1510,7 @@ body::after {
   }
 
   // ---------- Row building ----------
-  function makeInlineEdit(textEl, goals, idx, key, reload) {
+  function makeInlineEdit(textEl, idx, key, reload) {
     textEl.addEventListener('click', () => {
       if (textEl.getAttribute('contenteditable') === 'true') return;
       const original = textEl.textContent;
@@ -1605,7 +1602,7 @@ body::after {
     text.className = 'gm-text';
     text.textContent = goal.text;
     li.appendChild(text);
-    makeInlineEdit(text, null, idx, key, reload);
+    makeInlineEdit(text, idx, key, reload);
 
     const queueBtn = document.createElement('button');
     queueBtn.type = 'button';
@@ -2236,7 +2233,10 @@ body::after {
   let timerId = null;
   let cycleCount = 0;
 
-  function sessKey() { return 'pomo_sessions_' + new Date().toISOString().slice(0, 10); }
+  function localDateKey(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function sessKey() { return 'pomo_sessions_' + localDateKey(new Date()); }
   function loadSessions() { return parseInt(localStorage.getItem(sessKey()) || '0', 10); }
   function bumpSessions() { localStorage.setItem(sessKey(), loadSessions() + 1); renderSessions(); }
   function renderSessions() {
@@ -2322,6 +2322,10 @@ body::after {
     return d;
   }
 
+  function localDateStr(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
   function nextPayday() {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const dates = SALARY_PERIODS.map(p => lastWorkingDay(p.payYear, p.payMonth));
@@ -2346,7 +2350,7 @@ body::after {
 
     const pd = nextPayday();
     if (pd) {
-      const n = daysUntil(pd.toISOString().slice(0, 10));
+      const n = daysUntil(localDateStr(pd));
       html += '<div class="cd-item cd-item-payday">'
         + '<div class="cd-item-name">💰 Payday</div>'
         + '<div class="cd-item-days">' + (n <= 0 ? 'Today' : n) + '</div>'
@@ -2417,7 +2421,8 @@ document.addEventListener('DOMContentLoaded', function () {
   if (typeof initCloudSync !== 'function') return;
   initCloudSync({
     appKey: 'goals',
-    syncedPrefixes: ['goals:'],
+    syncedKeys: ['goal_streak_v1', 'weather_loc', 'age_dob', 'index_countdowns'],
+    syncedPrefixes: ['goals:', 'pomo_sessions_'],
     onApplied: function () {
       window.dispatchEvent(new CustomEvent('goals-changed'));
       window.dispatchEvent(new Event('storage'));
